@@ -1,4 +1,4 @@
-package main
+package controllers
 
 import (
 	"context"
@@ -7,20 +7,9 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	_ "github.com/lib/pq" // PostgreSQL sürücüsü
+	_ "github.com/lib/pq"
 	"github.com/yasarunylmzz/wordlingo-backend/internal/db"
 )
-
-func main() {
-	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
-	e.POST("/createuser", func(c echo.Context) error {
-		return createUser(c)
-	})
-	e.Logger.Fatal(e.Start(":1323"))
-}
 
 func createUser(c echo.Context) error {
 	// Bağlam oluşturma
