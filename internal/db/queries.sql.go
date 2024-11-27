@@ -83,10 +83,18 @@ const getCardById = `-- name: GetCardById :one
 SELECT id, language_1, language_2, description, desk_id FROM card WHERE id = $1
 `
 
+type GetCardByIdRow struct {
+	ID          int32
+	Language1   string
+	Language2   string
+	Description string
+	DeskID      int32
+}
+
 // Card-related queries
-func (q *Queries) GetCardById(ctx context.Context, id int32) (Card, error) {
+func (q *Queries) GetCardById(ctx context.Context, id int32) (GetCardByIdRow, error) {
 	row := q.db.QueryRowContext(ctx, getCardById, id)
-	var i Card
+	var i GetCardByIdRow
 	err := row.Scan(
 		&i.ID,
 		&i.Language1,
@@ -101,15 +109,23 @@ const getCardsByDeskId = `-- name: GetCardsByDeskId :many
 SELECT id, language_1, language_2, description, desk_id FROM card WHERE desk_id = $1
 `
 
-func (q *Queries) GetCardsByDeskId(ctx context.Context, deskID int32) ([]Card, error) {
+type GetCardsByDeskIdRow struct {
+	ID          int32
+	Language1   string
+	Language2   string
+	Description string
+	DeskID      int32
+}
+
+func (q *Queries) GetCardsByDeskId(ctx context.Context, deskID int32) ([]GetCardsByDeskIdRow, error) {
 	rows, err := q.db.QueryContext(ctx, getCardsByDeskId, deskID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Card
+	var items []GetCardsByDeskIdRow
 	for rows.Next() {
-		var i Card
+		var i GetCardsByDeskIdRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Language1,
@@ -134,10 +150,17 @@ const getDeskById = `-- name: GetDeskById :one
 SELECT id, title, description, user_id FROM desk WHERE id = $1
 `
 
+type GetDeskByIdRow struct {
+	ID          int32
+	Title       string
+	Description string
+	UserID      int32
+}
+
 // Desk-related queries
-func (q *Queries) GetDeskById(ctx context.Context, id int32) (Desk, error) {
+func (q *Queries) GetDeskById(ctx context.Context, id int32) (GetDeskByIdRow, error) {
 	row := q.db.QueryRowContext(ctx, getDeskById, id)
-	var i Desk
+	var i GetDeskByIdRow
 	err := row.Scan(
 		&i.ID,
 		&i.Title,
@@ -151,15 +174,22 @@ const getDesksByUserId = `-- name: GetDesksByUserId :many
 SELECT id, title, description, user_id FROM desk WHERE user_id = $1
 `
 
-func (q *Queries) GetDesksByUserId(ctx context.Context, userID int32) ([]Desk, error) {
+type GetDesksByUserIdRow struct {
+	ID          int32
+	Title       string
+	Description string
+	UserID      int32
+}
+
+func (q *Queries) GetDesksByUserId(ctx context.Context, userID int32) ([]GetDesksByUserIdRow, error) {
 	rows, err := q.db.QueryContext(ctx, getDesksByUserId, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Desk
+	var items []GetDesksByUserIdRow
 	for rows.Next() {
-		var i Desk
+		var i GetDesksByUserIdRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Title,

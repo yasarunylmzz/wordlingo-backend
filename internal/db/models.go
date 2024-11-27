@@ -6,28 +6,49 @@ package db
 
 import (
 	"database/sql"
+	"time"
 )
 
 type Card struct {
-	ID          int32
-	Language1   string
-	Language2   string
-	Description string
-	DeskID      int32
+	ID              int32
+	Language1       string
+	Language2       string
+	Description     string
+	DeskID          int32
+	ImportanceValue sql.NullInt32
 }
 
 type Desk struct {
 	ID          int32
+	UserID      int32
+	ImageLink   sql.NullString
 	Title       string
 	Description string
+}
+
+type Progress struct {
+	ID            int32
+	UserID        int32
+	CardID        int32
+	ProgressLevel int32
+	Date          time.Time
+}
+
+type Todo struct {
+	ID          int32
 	UserID      int32
+	Todo        string
+	Istrue      sql.NullBool
+	Description string
 }
 
 type User struct {
 	ID               int32
+	Name             string
+	Surname          string
+	Username         string
 	Email            string
 	Password         string
-	Name             string
 	VerificationCode sql.NullString
 	IsVerified       sql.NullBool
 }
