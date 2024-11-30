@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/yasarunylmzz/wordlingo-backend/controllers"
+	"github.com/yasarunylmzz/wordlingo-backend/routes"
 )
 
 func main() {
@@ -12,8 +12,7 @@ func main() {
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
-	e.POST("/createuser", func(c echo.Context) error {
-		return controllers.CreateUser(c) 
-	})
+	routes.RegisterUserRoutes(e)
+	
 	e.Logger.Fatal(e.Start(":1323"))
 }

@@ -1,9 +1,9 @@
 version: "2"
 sql:
-  - schema: "db/schema/schema.sql" # Şema dosyasının doğru yolu
+  - schema: "db/schema/schema.sql" # Şema dosyasının yolu
     queries: "db/queries/queries.sql" # Sorguların bulunduğu dizin
     engine: "postgresql" # Kullanılan veritabanı motoru
     gen:
       go:
-        out: "internal/db" # Oluşturulan kodların çıkış dizini
+        out: "internal/db" # Oluşturulan Go kodlarının çıkış dizini
         package: "db" # Paket adı
