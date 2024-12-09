@@ -51,3 +51,6 @@ UPDATE card SET language_1 = $1, language_2 = $2, description = $3 WHERE id = $4
 
 -- name: DeleteCard :exec
 DELETE FROM card WHERE id = $1;
+
+-- name: LoginUser :one
+SELECT id, name, email, password FROM users WHERE email = $1 AND password = $2;

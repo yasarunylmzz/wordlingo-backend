@@ -244,6 +244,34 @@ func (q *Queries) IsUserVerified(ctx context.Context, email string) (sql.NullBoo
 	return is_verified, err
 }
 
+const loginUser = `-- name: LoginUser :one
+SELECT id, name, email, password FROM users WHERE email = $1 AND password = $2
+`
+
+type LoginUserParams struct {
+	Email    string
+	Password string
+}
+
+type LoginUserRow struct {
+	ID       int32
+	Name     string
+	Email    string
+	Password string
+}
+
+func (q *Queries) LoginUser(ctx context.Context, arg LoginUserParams) (LoginUserRow, error) {
+	row := q.db.QueryRowContext(ctx, loginUser, arg.Email, arg.Password)
+	var i LoginUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Password,
+	)
+	return i, err
+}
+
 const setUserVerificationCode = `-- name: SetUserVerificationCode :exec
 UPDATE users SET verification_code = $1 WHERE email = $2
 `
