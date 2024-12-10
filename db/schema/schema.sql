@@ -2,10 +2,9 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     surname TEXT NOT NULL,
-    username TEXT NOT NULL,
+    username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
-    verification_code VARCHAR(6),
     is_verified BOOLEAN DEFAULT FALSE
 );
 
@@ -46,5 +45,13 @@ CREATE TABLE progress (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (card_id) REFERENCES card(id) ON DELETE CASCADE
 );
+
+CREATE TABLE verification_codes (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    code VARCHAR(6),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 
 CREATE INDEX idx_users_email ON users (email);

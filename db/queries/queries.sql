@@ -3,7 +3,7 @@
 SELECT id, name, email, password FROM users WHERE email = $1;
 
 -- name: CreateUser :exec
-INSERT INTO users (name, email, password) VALUES ($1, $2, $3);
+INSERT INTO users (name, surname, username, email, password) VALUES ($1, $2, $3, $4, $5);
 
 -- name: UpdateUserPassword :exec
 UPDATE users SET password = $1 WHERE email = $2;
@@ -53,4 +53,7 @@ UPDATE card SET language_1 = $1, language_2 = $2, description = $3 WHERE id = $4
 DELETE FROM card WHERE id = $1;
 
 -- name: LoginUser :one
-SELECT id, name, email, password FROM users WHERE email = $1 AND password = $2;
+-- name: LoginUser :one
+SELECT id, name, email, surname, is_verified, username 
+FROM users 
+WHERE (email = $1 OR username = $1) AND password = $2;

@@ -13,6 +13,7 @@ func main() {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
 	routes.RegisterUserRoutes(e)
+	routes.LoginUserRoutes(e)
 	
 	e.Logger.Fatal(e.Start(":1323"))
 }

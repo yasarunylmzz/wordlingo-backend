@@ -47,17 +47,25 @@ func (q *Queries) CreateDesk(ctx context.Context, arg CreateDeskParams) error {
 }
 
 const createUser = `-- name: CreateUser :exec
-INSERT INTO users (name, email, password) VALUES ($1, $2, $3)
+INSERT INTO users (name, surname, username, email, password) VALUES ($1, $2, $3, $4, $5)
 `
 
 type CreateUserParams struct {
 	Name     string
+	Surname  string
+	Username string
 	Email    string
 	Password string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
-	_, err := q.db.ExecContext(ctx, createUser, arg.Name, arg.Email, arg.Password)
+	_, err := q.db.ExecContext(ctx, createUser,
+		arg.Name,
+		arg.Surname,
+		arg.Username,
+		arg.Email,
+		arg.Password,
+	)
 	return err
 }
 
@@ -245,7 +253,9 @@ func (q *Queries) IsUserVerified(ctx context.Context, email string) (sql.NullBoo
 }
 
 const loginUser = `-- name: LoginUser :one
-SELECT id, name, email, password FROM users WHERE email = $1 AND password = $2
+SELECT id, name, email, surname, is_verified, username 
+FROM users 
+WHERE (email = $1 OR username = $1) AND password = $2
 `
 
 type LoginUserParams struct {
@@ -254,10 +264,12 @@ type LoginUserParams struct {
 }
 
 type LoginUserRow struct {
-	ID       int32
-	Name     string
-	Email    string
-	Password string
+	ID         int32
+	Name       string
+	Email      string
+	Surname    string
+	IsVerified sql.NullBool
+	Username   string
 }
 
 func (q *Queries) LoginUser(ctx context.Context, arg LoginUserParams) (LoginUserRow, error) {
@@ -267,7 +279,9 @@ func (q *Queries) LoginUser(ctx context.Context, arg LoginUserParams) (LoginUser
 		&i.ID,
 		&i.Name,
 		&i.Email,
-		&i.Password,
+		&i.Surname,
+		&i.IsVerified,
+		&i.Username,
 	)
 	return i, err
 }
