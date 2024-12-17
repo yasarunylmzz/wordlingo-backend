@@ -9,8 +9,9 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	_ "github.com/lib/pq"
 	"github.com/yasarunylmzz/wordlingo-backend/internal/db"
-	_ "github.com/yasarunylmzz/wordlingo-backend/mail"
+	"github.com/yasarunylmzz/wordlingo-backend/mail"
 )
 
 func CreateUser(c echo.Context) error {
@@ -24,6 +25,7 @@ func CreateUser(c echo.Context) error {
 	connStr := "postgres://postgres:abc123@localhost:5432/flashcards?sslmode=disable"
 	dbConn, err := sql.Open("postgres", connStr)
 	if err != nil {
+		log.Printf("Failed to open database connection: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database connection failed"})
 	}
 	defer dbConn.Close()
@@ -32,16 +34,22 @@ func CreateUser(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to ping database"})
 	}
 
+
 	queries := db.New(dbConn)
 	if err := queries.CreateUser(ctx, params); err != nil {
 		log.Printf("Failed to create user: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create user"})
 	}
 	// Kullanıcı oluşturulduktan sonra doğrulama kodu oluştur
-	verificationCode := mail.generateVerificationCode() // mail paketinden fonksiyonu çağırın
+	verificationCode := mail.GenerateVerificationCode() // mail paketinden fonksiyonu çağırın
+	
+
+	
+
+	
 
 	// Doğrulama kodunu gönder
-	if err := mail.sendMail(params.Email, verificationCode); err != nil { // mail paketinden fonksiyonu çağırın
+	if err := mail.SendMail(params.Email, verificationCode); err != nil { // mail paketinden fonksiyonu çağırın
 		log.Printf("Failed to send email: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to send email"})
 	}

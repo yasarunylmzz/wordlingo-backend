@@ -165,7 +165,6 @@ type GetDeskByIdRow struct {
 	UserID      int32
 }
 
-// Desk-related queries
 func (q *Queries) GetDeskById(ctx context.Context, id int32) (GetDeskByIdRow, error) {
 	row := q.db.QueryRowContext(ctx, getDeskById, id)
 	var i GetDeskByIdRow
@@ -242,11 +241,11 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 }
 
 const isUserVerified = `-- name: IsUserVerified :one
-SELECT is_verified FROM users WHERE email = $1
+SELECT is_verified FROM users WHERE id = $1
 `
 
-func (q *Queries) IsUserVerified(ctx context.Context, email string) (sql.NullBool, error) {
-	row := q.db.QueryRowContext(ctx, isUserVerified, email)
+func (q *Queries) IsUserVerified(ctx context.Context, id int32) (sql.NullBool, error) {
+	row := q.db.QueryRowContext(ctx, isUserVerified, id)
 	var is_verified sql.NullBool
 	err := row.Scan(&is_verified)
 	return is_verified, err
@@ -284,20 +283,6 @@ func (q *Queries) LoginUser(ctx context.Context, arg LoginUserParams) (LoginUser
 		&i.Username,
 	)
 	return i, err
-}
-
-const setUserVerificationCode = `-- name: SetUserVerificationCode :exec
-UPDATE users SET verification_code = $1 WHERE email = $2
-`
-
-type SetUserVerificationCodeParams struct {
-	VerificationCode sql.NullString
-	Email            string
-}
-
-func (q *Queries) SetUserVerificationCode(ctx context.Context, arg SetUserVerificationCodeParams) error {
-	_, err := q.db.ExecContext(ctx, setUserVerificationCode, arg.VerificationCode, arg.Email)
-	return err
 }
 
 const updateCard = `-- name: UpdateCard :exec
@@ -365,16 +350,20 @@ func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPassword
 	return err
 }
 
-const verifyUser = `-- name: VerifyUser :exec
-UPDATE users SET is_verified = TRUE WHERE email = $1 AND verification_code = $2
+const verificationCodeCreate = `-- name: VerificationCodeCreate :one
+INSERT INTO verification_codes (user_id, code) 
+VALUES ($1, $2)
+RETURNING id
 `
 
-type VerifyUserParams struct {
-	Email            string
-	VerificationCode sql.NullString
+type VerificationCodeCreateParams struct {
+	UserID sql.NullInt32
+	Code   sql.NullString
 }
 
-func (q *Queries) VerifyUser(ctx context.Context, arg VerifyUserParams) error {
-	_, err := q.db.ExecContext(ctx, verifyUser, arg.Email, arg.VerificationCode)
-	return err
+func (q *Queries) VerificationCodeCreate(ctx context.Context, arg VerificationCodeCreateParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, verificationCodeCreate, arg.UserID, arg.Code)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }

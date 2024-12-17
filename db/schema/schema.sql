@@ -55,3 +55,7 @@ CREATE TABLE verification_codes (
 
 
 CREATE INDEX idx_users_email ON users (email);
+CREATE INDEX idx_verification_codes_user_id ON verification_codes (user_id);
+CREATE INDEX idx_verification_codes_code ON verification_codes (code);
+
+ALTER TABLE verification_codes ADD CONSTRAINT unique_code UNIQUE (code);

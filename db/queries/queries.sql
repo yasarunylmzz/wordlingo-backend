@@ -11,16 +11,6 @@ UPDATE users SET password = $1 WHERE email = $2;
 -- name: UpdateUserInfo :exec
 UPDATE users SET name = $1, email = $2 WHERE id = $3;
 
--- name: SetUserVerificationCode :exec
-UPDATE users SET verification_code = $1 WHERE email = $2;
-
--- name: VerifyUser :exec
-UPDATE users SET is_verified = TRUE WHERE email = $1 AND verification_code = $2;
-
--- name: IsUserVerified :one
-SELECT is_verified FROM users WHERE email = $1;
-
--- Desk-related queries
 -- name: GetDeskById :one
 SELECT id, title, description, user_id FROM desk WHERE id = $1;
 
@@ -53,7 +43,14 @@ UPDATE card SET language_1 = $1, language_2 = $2, description = $3 WHERE id = $4
 DELETE FROM card WHERE id = $1;
 
 -- name: LoginUser :one
--- name: LoginUser :one
 SELECT id, name, email, surname, is_verified, username 
 FROM users 
 WHERE (email = $1 OR username = $1) AND password = $2;
+
+-- name: VerificationCodeCreate :one
+INSERT INTO verification_codes (user_id, code) 
+VALUES ($1, $2)
+RETURNING id;
+
+-- name: IsUserVerified :one
+SELECT is_verified FROM users WHERE id = $1;

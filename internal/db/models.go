@@ -43,12 +43,18 @@ type Todo struct {
 }
 
 type User struct {
-	ID               int32
-	Name             string
-	Surname          string
-	Username         string
-	Email            string
-	Password         string
-	VerificationCode sql.NullString
-	IsVerified       sql.NullBool
+	ID         int32
+	Name       string
+	Surname    string
+	Username   string
+	Email      string
+	Password   string
+	IsVerified sql.NullBool
+}
+
+type VerificationCode struct {
+	ID        int32
+	UserID    sql.NullInt32
+	Code      sql.NullString
+	CreatedAt sql.NullTime
 }
