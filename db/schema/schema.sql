@@ -31,7 +31,7 @@ CREATE TABLE todo (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     todo TEXT NOT NULL,
-    isTrue BOOLEAN DEFAULT FALSE,
+    is_true BOOLEAN DEFAULT FALSE,
     description TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -49,10 +49,10 @@ CREATE TABLE progress (
 CREATE TABLE verification_codes (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
-    code VARCHAR(6),
-    created_at TIMESTAMP DEFAULT NOW()
+    code VARCHAR(6) NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    expires_at TIMESTAMP DEFAULT NOW() + INTERVAL '1 day'
 );
-
 
 CREATE INDEX idx_users_email ON users (email);
 CREATE INDEX idx_verification_codes_user_id ON verification_codes (user_id);

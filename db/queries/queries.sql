@@ -2,8 +2,10 @@
 -- name: GetUserByEmail :one
 SELECT id, name, email, password FROM users WHERE email = $1;
 
--- name: CreateUser :exec
-INSERT INTO users (name, surname, username, email, password) VALUES ($1, $2, $3, $4, $5);
+-- name: CreateUser :one
+INSERT INTO users (name, surname, username, email, password) 
+VALUES ($1, $2, $3, $4, $5) 
+RETURNING id;
 
 -- name: UpdateUserPassword :exec
 UPDATE users SET password = $1 WHERE email = $2;
@@ -48,8 +50,8 @@ FROM users
 WHERE (email = $1 OR username = $1) AND password = $2;
 
 -- name: VerificationCodeCreate :one
-INSERT INTO verification_codes (user_id, code) 
-VALUES ($1, $2)
+INSERT INTO verification_codes (user_id, code, created_at, expires_at)
+VALUES ($1, $2, NOW(), NOW() + INTERVAL '1 day')
 RETURNING id;
 
 -- name: IsUserVerified :one

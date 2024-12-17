@@ -38,7 +38,7 @@ type Todo struct {
 	ID          int32
 	UserID      int32
 	Todo        string
-	Istrue      sql.NullBool
+	IsTrue      sql.NullBool
 	Description string
 }
 
@@ -55,6 +55,7 @@ type User struct {
 type VerificationCode struct {
 	ID        int32
 	UserID    sql.NullInt32
-	Code      sql.NullString
+	Code      string
 	CreatedAt sql.NullTime
+	ExpiresAt sql.NullTime
 }

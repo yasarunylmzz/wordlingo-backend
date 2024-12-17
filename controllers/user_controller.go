@@ -15,47 +15,52 @@ import (
 )
 
 func CreateUser(c echo.Context) error {
-	ctx := context.Background()
+    ctx := context.Background()
 
-	var params db.CreateUserParams
-	if err := c.Bind(&params); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
-	}
+    var params db.CreateUserParams
+    if err := c.Bind(&params); err != nil {
+        return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+    }
 
-	connStr := "postgres://postgres:abc123@localhost:5432/flashcards?sslmode=disable"
-	dbConn, err := sql.Open("postgres", connStr)
+    connStr := "postgres://postgres:abc123@localhost:5432/flashcards?sslmode=disable"
+    dbConn, err := sql.Open("postgres", connStr)
+    if err != nil {
+        log.Printf("Failed to open database connection: %v", err)
+        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database connection failed"})
+    }
+    defer dbConn.Close()
+
+    if err := dbConn.Ping(); err != nil {
+        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to ping database"})
+    }
+
+    queries := db.New(dbConn)
+
+	userID, err := queries.CreateUser(ctx, params)
 	if err != nil {
-		log.Printf("Failed to open database connection: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database connection failed"})
-	}
-	defer dbConn.Close()
-
-	if err := dbConn.Ping(); err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to ping database"})
-	}
-
-
-	queries := db.New(dbConn)
-	if err := queries.CreateUser(ctx, params); err != nil {
 		log.Printf("Failed to create user: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create user"})
 	}
-	// Kullanıcı oluşturulduktan sonra doğrulama kodu oluştur
-	verificationCode := mail.GenerateVerificationCode() // mail paketinden fonksiyonu çağırın
-	
 
-	
+    verificationCode := mail.GenerateVerificationCode()
+    verificationParams := db.VerificationCodeCreateParams{
+        UserID: sql.NullInt32{Int32: userID, Valid: true},
+        Code:   verificationCode,
+    }
+    if _, err := queries.VerificationCodeCreate(ctx, verificationParams); err != nil {
+        log.Printf("Failed to create verification code: %v", err)
+        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create verification code"})
+    }
 
-	
+    if err := mail.SendMail(params.Email, verificationCode); err != nil {
+        log.Printf("Failed to send email: %v", err)
+        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to send email"})
+    }
 
-	// Doğrulama kodunu gönder
-	if err := mail.SendMail(params.Email, verificationCode); err != nil { // mail paketinden fonksiyonu çağırın
-		log.Printf("Failed to send email: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to send email"})
-	}
-
-	return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully"})
+    return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully"})
 }
+
+
 
 func LoginUser(c echo.Context) error {
 	ctx := context.Background()
@@ -65,7 +70,6 @@ func LoginUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
 	}
 
-	// Debug: Gelen inputu loglayın
 	fmt.Printf("Params: %+v", params)
 
 	connStr := "postgres://postgres:abc123@localhost:5432/flashcards?sslmode=disable"
@@ -95,7 +99,6 @@ func LoginUser(c echo.Context) error {
 	log.Printf("User logged in successfully: %+v", user)
 	
 
-	// Debug: Bulunan kullanıcıyı loglayın
 	log.Printf("User found: %+v", user)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{

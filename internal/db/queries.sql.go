@@ -46,8 +46,10 @@ func (q *Queries) CreateDesk(ctx context.Context, arg CreateDeskParams) error {
 	return err
 }
 
-const createUser = `-- name: CreateUser :exec
-INSERT INTO users (name, surname, username, email, password) VALUES ($1, $2, $3, $4, $5)
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (name, surname, username, email, password) 
+VALUES ($1, $2, $3, $4, $5) 
+RETURNING id
 `
 
 type CreateUserParams struct {
@@ -58,15 +60,17 @@ type CreateUserParams struct {
 	Password string
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
-	_, err := q.db.ExecContext(ctx, createUser,
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, createUser,
 		arg.Name,
 		arg.Surname,
 		arg.Username,
 		arg.Email,
 		arg.Password,
 	)
-	return err
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const deleteCard = `-- name: DeleteCard :exec
@@ -351,14 +355,14 @@ func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPassword
 }
 
 const verificationCodeCreate = `-- name: VerificationCodeCreate :one
-INSERT INTO verification_codes (user_id, code) 
-VALUES ($1, $2)
+INSERT INTO verification_codes (user_id, code, created_at, expires_at)
+VALUES ($1, $2, NOW(), NOW() + INTERVAL '1 day')
 RETURNING id
 `
 
 type VerificationCodeCreateParams struct {
 	UserID sql.NullInt32
-	Code   sql.NullString
+	Code   string
 }
 
 func (q *Queries) VerificationCodeCreate(ctx context.Context, arg VerificationCodeCreateParams) (int32, error) {

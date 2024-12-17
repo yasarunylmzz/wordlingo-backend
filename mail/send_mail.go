@@ -12,11 +12,9 @@ import (
 )
 
 func SendMail(toEmail string, verificationCode string) error {
-	// Namecheap SMTP ayarları
-	smtpHost := "mail.privateemail.com"  // SMTP sunucu
-	smtpPort := "587"                    // TLS için port
+	smtpHost := "mail.privateemail.com"  
+	smtpPort := "587"                   
 
-	// .env dosyasından kullanıcı adı ve şifreyi yükle
 	godotenv.Load()
 	auth := smtp.PlainAuth("", os.Getenv("SMTP_USERNAME"), os.Getenv("SMTP_PASSWORD"), smtpHost)
 	
