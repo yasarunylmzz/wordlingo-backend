@@ -16,13 +16,13 @@ import (
 
 func CreateUser(c echo.Context) error {
     ctx := context.Background()
-
     var params db.CreateUserParams
+	connStr := "postgres://postgres:abc123@localhost:5432/flashcards?sslmode=disable"
+
     if err := c.Bind(&params); err != nil {
         return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
     }
 
-    connStr := "postgres://postgres:abc123@localhost:5432/flashcards?sslmode=disable"
     dbConn, err := sql.Open("postgres", connStr)
     if err != nil {
         log.Printf("Failed to open database connection: %v", err)
@@ -35,7 +35,6 @@ func CreateUser(c echo.Context) error {
     }
 
     queries := db.New(dbConn)
-
 	userID, err := queries.CreateUser(ctx, params)
 	if err != nil {
 		log.Printf("Failed to create user: %v", err)
