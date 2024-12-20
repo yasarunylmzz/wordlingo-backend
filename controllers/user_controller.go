@@ -12,6 +12,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/yasarunylmzz/wordlingo-backend/internal/db"
 	"github.com/yasarunylmzz/wordlingo-backend/mail"
+	"github.com/yasarunylmzz/wordlingo-backend/services"
 )
 
 func CreateUser(c echo.Context) error {
@@ -35,6 +36,12 @@ func CreateUser(c echo.Context) error {
     }
 
     queries := db.New(dbConn)
+	hashPass, err := services.HashPassword(params.Password)
+	if err != nil{
+		log.Printf("Fail")
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed hashing"})
+	}
+	params.Password = hashPass
 	userID, err := queries.CreateUser(ctx, params)
 	if err != nil {
 		log.Printf("Failed to create user: %v", err)
