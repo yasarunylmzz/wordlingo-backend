@@ -1,24 +1,4 @@
-package mail
-
-import (
-	"fmt"
-	"log"
-	"math/rand"
-	"net/smtp"
-	"os"
-	"time"
-
-	"github.com/joho/godotenv"
-)
-func SendMail(toEmail string, verificationCode string) error {
-	smtpHost := "mail.privateemail.com"
-	smtpPort := "587"
-
-	godotenv.Load()
-	auth := smtp.PlainAuth("", os.Getenv("SMTP_USERNAME"), os.Getenv("SMTP_PASSWORD"), smtpHost)
-
-	htmlContent := `
-	<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
   <head>
     <title>Wordlingo Verification</title>
@@ -66,7 +46,7 @@ func SendMail(toEmail string, verificationCode string) error {
             line-height: 1.5;
           "
         >
-        Your verification code is:
+          Thank you for registering. Your verification code is:
         </p>
         <div
           style="
@@ -78,7 +58,6 @@ func SendMail(toEmail string, verificationCode string) error {
           "
         >
           ` + verificationCode + `
-          
         </div>
         <p
           style="
@@ -88,7 +67,7 @@ func SendMail(toEmail string, verificationCode string) error {
             line-height: 1.5;
           "
         >
-        Please use this code within the next 10 minutes to verify your email address.
+          If you did not request this, please ignore this email.
         </p>
         <a
           href="https://www.wordlingo.me/verify"
@@ -132,27 +111,3 @@ func SendMail(toEmail string, verificationCode string) error {
     </div>
   </body>
 </html>
-`
-
-	msg := []byte("To: " + toEmail + "\r\n" +
-  "MIME-Version: 1.0\r\n" + 
-		"Subject: Verification Code\r\n" +
-		"Content-Type: text/html; charset=UTF-8\r\n" +
-		"\r\n" +
-		htmlContent + "\r\n")
-
-	// E-posta gönderme
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, "info@wordlingo.me", []string{toEmail}, msg)
-	if err != nil {
-		log.Printf("Failed to send email: %v", err)
-		return err
-	}
-
-	return nil
-}
-
-
-func GenerateVerificationCode() string {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return fmt.Sprintf("%06d", r.Intn(1000000)) // 000000 - 999999 arası
-}

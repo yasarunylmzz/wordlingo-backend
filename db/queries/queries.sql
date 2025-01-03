@@ -51,8 +51,13 @@ WHERE (email = $1 OR username = $1) AND password = $2;
 
 -- name: VerificationCodeCreate :one
 INSERT INTO verification_codes (user_id, code, created_at, expires_at)
-VALUES ($1, $2, NOW(), NOW() + INTERVAL '1 day')
+VALUES ($1, $2, datetime('now'), datetime('now', '+1 day'))
 RETURNING id;
 
 -- name: IsUserVerified :one
-SELECT is_verified FROM users WHERE id = $1;
+SELECT is_verified, email FROM users WHERE id = $1;
+
+-- name: VerifyUser :exec
+UPDATE users 
+SET is_verified = true 
+WHERE id = $1 AND email = $2;

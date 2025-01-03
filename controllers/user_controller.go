@@ -10,6 +10,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
+	"github.com/yasarunylmzz/wordlingo-backend/helpers"
 	"github.com/yasarunylmzz/wordlingo-backend/internal/db"
 	"github.com/yasarunylmzz/wordlingo-backend/mail"
 	"github.com/yasarunylmzz/wordlingo-backend/services"
@@ -18,29 +19,35 @@ import (
 func CreateUser(c echo.Context) error {
     ctx := context.Background()
     var params db.CreateUserParams
-	connStr := "postgres://postgres:abc123@localhost:5432/flashcards?sslmode=disable"
+	queries, err := helpers.OpenDatabaseConnection()
 
     if err := c.Bind(&params); err != nil {
         return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
     }
 
-    dbConn, err := sql.Open("postgres", connStr)
     if err != nil {
         log.Printf("Failed to open database connection: %v", err)
         return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database connection failed"})
     }
-    defer dbConn.Close()
 
-    if err := dbConn.Ping(); err != nil {
-        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to ping database"})
-    }
-
-    queries := db.New(dbConn)
 	hashPass, err := services.HashPassword(params.Password)
 	if err != nil{
 		log.Printf("Fail")
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed hashing"})
 	}
+	 // Generate access and refresh tokens
+	 accessToken, err := services.CreateAccessToken(params.Password) // Email or userID can be used instead of password
+	 if err != nil {
+		 log.Printf("Failed to create access token: %v", err)
+		 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create access token"})
+	 }
+ 
+	 refreshToken, err := services.CreateRefreshToken(params.Password) // Email or userID can be used instead of password
+	 if err != nil {
+		 log.Printf("Failed to create refresh token: %v", err)
+		 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create refresh token"})
+	 }
+
 	params.Password = hashPass
 	userID, err := queries.CreateUser(ctx, params)
 	if err != nil {
@@ -53,6 +60,9 @@ func CreateUser(c echo.Context) error {
         UserID: sql.NullInt32{Int32: userID, Valid: true},
         Code:   verificationCode,
     }
+
+	
+
     if _, err := queries.VerificationCodeCreate(ctx, verificationParams); err != nil {
         log.Printf("Failed to create verification code: %v", err)
         return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create verification code"})
@@ -63,7 +73,7 @@ func CreateUser(c echo.Context) error {
         return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to send email"})
     }
 
-    return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully"})
+    return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully","accessToken": accessToken,"refreshToken":refreshToken})
 }
 
 
