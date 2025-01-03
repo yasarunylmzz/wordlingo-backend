@@ -1,4 +1,5 @@
-package services
+// services/jwt_services.go
+package jwt_services
 
 import (
 	"fmt"

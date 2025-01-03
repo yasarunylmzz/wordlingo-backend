@@ -1,4 +1,5 @@
-package services
+// services/hash_services.go
+package hash_services
 
 import "golang.org/x/crypto/bcrypt"
 

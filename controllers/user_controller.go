@@ -1,4 +1,4 @@
-// controllers/userController.go
+// controllers/user_controller.go
 package controllers
 
 import (
@@ -13,7 +13,7 @@ import (
 	"github.com/yasarunylmzz/wordlingo-backend/helpers"
 	"github.com/yasarunylmzz/wordlingo-backend/internal/db"
 	"github.com/yasarunylmzz/wordlingo-backend/mail"
-	"github.com/yasarunylmzz/wordlingo-backend/services"
+	hash_services "github.com/yasarunylmzz/wordlingo-backend/services/hash"
 )
 
 func CreateUser(c echo.Context) error {
@@ -30,19 +30,20 @@ func CreateUser(c echo.Context) error {
         return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database connection failed"})
     }
 
-	hashPass, err := services.HashPassword(params.Password)
+	hashPass, err := hash_services.HashPassword(params.Password)
 	if err != nil{
 		log.Printf("Fail")
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed hashing"})
 	}
+	
 	 // Generate access and refresh tokens
-	 accessToken, err := services.CreateAccessToken(params.Password) // Email or userID can be used instead of password
+	 accessToken, err := jwt_services.createAccessToken(params.Password) 
 	 if err != nil {
 		 log.Printf("Failed to create access token: %v", err)
 		 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create access token"})
 	 }
  
-	 refreshToken, err := services.CreateRefreshToken(params.Password) // Email or userID can be used instead of password
+	 refreshToken, err := jwt_services.createRefreshToken(params.Password) 
 	 if err != nil {
 		 log.Printf("Failed to create refresh token: %v", err)
 		 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create refresh token"})
