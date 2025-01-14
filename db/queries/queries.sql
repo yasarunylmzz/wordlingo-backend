@@ -3,8 +3,8 @@
 SELECT id, name, email, password FROM users WHERE email = $1;
 
 -- name: CreateUser :one
-INSERT INTO users (name, surname, username, email, password) 
-VALUES ($1, $2, $3, $4, $5) 
+INSERT INTO users (name, surname, username, email, password, salt_code) 
+VALUES ($1, $2, $3, $4, $5, $6) 
 RETURNING id;
 
 -- name: UpdateUserPassword :exec
@@ -51,7 +51,7 @@ WHERE (email = $1 OR username = $1) AND password = $2;
 
 -- name: VerificationCodeCreate :one
 INSERT INTO verification_codes (user_id, code, created_at, expires_at)
-VALUES ($1, $2, datetime('now'), datetime('now', '+1 day'))
+VALUES ($1, $2, NOW(), NOW() + INTERVAL '1 day')
 RETURNING id;
 
 -- name: IsUserVerified :one

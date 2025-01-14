@@ -1,16 +1,32 @@
 // services/hash_services.go
 package hash_services
 
-import "golang.org/x/crypto/bcrypt"
+import (
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/exp/rand"
+)
 
 
-
-func HashPassword(password string) (string, error) {
-    bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-    return string(bytes), err
+func GenerateSalt(length int) string {
+	rand.Seed(uint64(time.Now().UnixNano()))
+	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	salt := make([]byte, length)
+	for i := range salt {
+		salt[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(salt)
 }
 
-func CheckPasswordHash(password, hash string) bool {
-    err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-    return err == nil
+func HashPasswordWithSalt(password, salt string) (string, error) {
+	passwordWithSalt := password + salt
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(passwordWithSalt), bcrypt.DefaultCost)
+	return string(hashedPassword), err
 }
+
+func VerifyPassword(password, salt, hashedPassword string) error {
+	passwordWithSalt := password + salt
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(passwordWithSalt))
+}
+

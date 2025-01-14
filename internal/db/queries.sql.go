@@ -47,8 +47,8 @@ func (q *Queries) CreateDesk(ctx context.Context, arg CreateDeskParams) error {
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (name, surname, username, email, password) 
-VALUES ($1, $2, $3, $4, $5) 
+INSERT INTO users (name, surname, username, email, password, salt_code) 
+VALUES ($1, $2, $3, $4, $5, $6) 
 RETURNING id
 `
 
@@ -58,6 +58,7 @@ type CreateUserParams struct {
 	Username string
 	Email    string
 	Password string
+	SaltCode string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int32, error) {
@@ -67,6 +68,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int32, 
 		arg.Username,
 		arg.Email,
 		arg.Password,
+		arg.SaltCode,
 	)
 	var id int32
 	err := row.Scan(&id)
@@ -245,14 +247,19 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 }
 
 const isUserVerified = `-- name: IsUserVerified :one
-SELECT is_verified FROM users WHERE id = $1
+SELECT is_verified, email FROM users WHERE id = $1
 `
 
-func (q *Queries) IsUserVerified(ctx context.Context, id int32) (sql.NullBool, error) {
+type IsUserVerifiedRow struct {
+	IsVerified sql.NullBool
+	Email      string
+}
+
+func (q *Queries) IsUserVerified(ctx context.Context, id int32) (IsUserVerifiedRow, error) {
 	row := q.db.QueryRowContext(ctx, isUserVerified, id)
-	var is_verified sql.NullBool
-	err := row.Scan(&is_verified)
-	return is_verified, err
+	var i IsUserVerifiedRow
+	err := row.Scan(&i.IsVerified, &i.Email)
+	return i, err
 }
 
 const loginUser = `-- name: LoginUser :one
@@ -370,4 +377,20 @@ func (q *Queries) VerificationCodeCreate(ctx context.Context, arg VerificationCo
 	var id int32
 	err := row.Scan(&id)
 	return id, err
+}
+
+const verifyUser = `-- name: VerifyUser :exec
+UPDATE users 
+SET is_verified = true 
+WHERE id = $1 AND email = $2
+`
+
+type VerifyUserParams struct {
+	ID    int32
+	Email string
+}
+
+func (q *Queries) VerifyUser(ctx context.Context, arg VerifyUserParams) error {
+	_, err := q.db.ExecContext(ctx, verifyUser, arg.ID, arg.Email)
+	return err
 }

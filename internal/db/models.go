@@ -50,6 +50,7 @@ type User struct {
 	Email      string
 	Password   string
 	IsVerified sql.NullBool
+	SaltCode   string
 }
 
 type VerificationCode struct {

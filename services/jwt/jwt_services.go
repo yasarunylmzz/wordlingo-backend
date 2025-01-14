@@ -3,15 +3,16 @@ package jwt_services
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 )
 
-var secretKey = []byte("secret-key")
+var secretKey = []byte(os.Getenv("JWT_SECRET"))
 
 // createAccessToken creates an access token (short-lived).
-func createAccessToken(password string) (string, error) {
+func CreateAccessToken(password string) (string, error) {
     token := jwt.NewWithClaims(jwt.SigningMethodHS256,
         jwt.MapClaims{
             "password": password,
@@ -27,7 +28,7 @@ func createAccessToken(password string) (string, error) {
 }
 
 // createRefreshToken creates a refresh token (long-lived).
-func createRefreshToken(password string) (string, error) {
+func CreateRefreshToken(password string) (string, error) {
     token := jwt.NewWithClaims(jwt.SigningMethodHS256,
         jwt.MapClaims{
             "password": password,
@@ -43,7 +44,7 @@ func createRefreshToken(password string) (string, error) {
 }
 
 // Verify Access Token
-func verifyAccessToken(tokenString string) (*jwt.Token, error) {
+func VerifyAccessToken(tokenString string) (*jwt.Token, error) {
     token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
         if token.Method != jwt.SigningMethodHS256 {
             return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -57,7 +58,7 @@ func verifyAccessToken(tokenString string) (*jwt.Token, error) {
 }
 
 // Verify Refresh Token
-func verifyRefreshToken(tokenString string) (*jwt.Token, error) {
+func VerifyRefreshToken(tokenString string) (*jwt.Token, error) {
     token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
         if token.Method != jwt.SigningMethodHS256 {
             return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

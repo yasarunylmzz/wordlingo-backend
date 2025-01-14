@@ -6,14 +6,10 @@ import (
 )
 
 func RegisterUserRoutes(e *echo.Echo) {
-	e.POST("/createuser", func(c echo.Context) error {
-		return controllers.CreateUser(c) 
-	})
+	e.POST("/createuser", controllers.CreateUser)
 
 }
 
 func LoginUserRoutes(e *echo.Echo){
-	e.GET("/login", func (c echo.Context) error{
-		return controllers.LoginUser(c)
-	})
+	e.GET("/login", controllers.LoginUser)
 }

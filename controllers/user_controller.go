@@ -14,6 +14,7 @@ import (
 	"github.com/yasarunylmzz/wordlingo-backend/internal/db"
 	"github.com/yasarunylmzz/wordlingo-backend/mail"
 	hash_services "github.com/yasarunylmzz/wordlingo-backend/services/hash"
+	jwt_services "github.com/yasarunylmzz/wordlingo-backend/services/jwt"
 )
 
 func CreateUser(c echo.Context) error {
@@ -29,21 +30,22 @@ func CreateUser(c echo.Context) error {
         log.Printf("Failed to open database connection: %v", err)
         return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database connection failed"})
     }
-
-	hashPass, err := hash_services.HashPassword(params.Password)
+	salt := hash_services.GenerateSalt(16)
+	params.SaltCode = salt
+	hashPass, err := hash_services.HashPasswordWithSalt(params.Password, salt)
 	if err != nil{
 		log.Printf("Fail")
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed hashing"})
 	}
 	
 	 // Generate access and refresh tokens
-	 accessToken, err := jwt_services.createAccessToken(params.Password) 
+	 accessToken, err := jwt_services.CreateAccessToken(params.Password) 
 	 if err != nil {
 		 log.Printf("Failed to create access token: %v", err)
 		 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create access token"})
 	 }
  
-	 refreshToken, err := jwt_services.createRefreshToken(params.Password) 
+	 refreshToken, err := jwt_services.CreateRefreshToken(params.Password) 
 	 if err != nil {
 		 log.Printf("Failed to create refresh token: %v", err)
 		 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create refresh token"})
@@ -129,4 +131,9 @@ func LoginUser(c echo.Context) error {
 			"username": user.Username,
 		},
 	})
+}
+
+
+func UserVerify(c echo.Context) error {
+	return nil
 }
