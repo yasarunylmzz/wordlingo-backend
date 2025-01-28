@@ -9,6 +9,5 @@ func main() {
 	e := echo.New()
 	routes.RegisterUserRoutes(e)
 	routes.LoginUserRoutes(e)
-	
 	e.Logger.Fatal(e.Start(":1323"))
 }

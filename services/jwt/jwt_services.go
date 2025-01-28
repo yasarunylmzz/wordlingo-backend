@@ -12,11 +12,11 @@ import (
 var secretKey = []byte(os.Getenv("JWT_SECRET"))
 
 // createAccessToken creates an access token (short-lived).
-func CreateAccessToken(password string) (string, error) {
+func CreateAccessToken(username string) (string, error) {
     token := jwt.NewWithClaims(jwt.SigningMethodHS256,
         jwt.MapClaims{
-            "password": password,
-            "exp":      time.Now().Add(time.Hour * 24).Unix(), // Access token expires in 1 day
+            "username": username,
+            "exp":      time.Now().Add(time.Hour * 24 * 7).Unix(), // Access token expires in 1 week
         })
 
     tokenString, err := token.SignedString(secretKey)
@@ -28,11 +28,11 @@ func CreateAccessToken(password string) (string, error) {
 }
 
 // createRefreshToken creates a refresh token (long-lived).
-func CreateRefreshToken(password string) (string, error) {
+func CreateRefreshToken(username string) (string, error) {
     token := jwt.NewWithClaims(jwt.SigningMethodHS256,
         jwt.MapClaims{
-            "password": password,
-            "exp":      time.Now().Add(time.Hour * 24 * 7).Unix(), // Refresh token expires in 1 week
+            "username": username,
+            "exp":      time.Now().Add(time.Hour * 24 * 30).Unix(), // Refresh token expires in 1 month
         })
 
     tokenString, err := token.SignedString(secretKey)

@@ -1,10 +1,10 @@
 -- User-related queries
 -- name: GetUserByEmail :one
-SELECT id, name, email, password FROM users WHERE email = $1;
+SELECT id, name, surname, username, email FROM users WHERE email = $1;
 
 -- name: CreateUser :one
-INSERT INTO users (name, surname, username, email, password, salt_code) 
-VALUES ($1, $2, $3, $4, $5, $6) 
+INSERT INTO users (name, surname, username, email, password) 
+VALUES ($1, $2, $3, $4, $5) 
 RETURNING id;
 
 -- name: UpdateUserPassword :exec
@@ -44,11 +44,6 @@ UPDATE card SET language_1 = $1, language_2 = $2, description = $3 WHERE id = $4
 -- name: DeleteCard :exec
 DELETE FROM card WHERE id = $1;
 
--- name: LoginUser :one
-SELECT id, name, email, surname, is_verified, username 
-FROM users 
-WHERE (email = $1 OR username = $1) AND password = $2;
-
 -- name: VerificationCodeCreate :one
 INSERT INTO verification_codes (user_id, code, created_at, expires_at)
 VALUES ($1, $2, NOW(), NOW() + INTERVAL '1 day')
@@ -61,3 +56,8 @@ SELECT is_verified, email FROM users WHERE id = $1;
 UPDATE users 
 SET is_verified = true 
 WHERE id = $1 AND email = $2;
+
+-- name: GetHashPass :one
+SELECT password 
+FROM users 
+WHERE email = $1;

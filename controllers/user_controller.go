@@ -4,7 +4,6 @@ package controllers
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -30,28 +29,26 @@ func CreateUser(c echo.Context) error {
         log.Printf("Failed to open database connection: %v", err)
         return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database connection failed"})
     }
-	salt := hash_services.GenerateSalt(16)
-	params.SaltCode = salt
-	hashPass, err := hash_services.HashPasswordWithSalt(params.Password, salt)
-	if err != nil{
-		log.Printf("Fail")
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed hashing"})
+
+	encodedHash, err := hash_services.HashPassword(params.Password) 
+	if err != nil {
+		log.Printf("Şifre hash'lenemedi: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "password_hashing_failed"})
 	}
 	
-	 // Generate access and refresh tokens
-	 accessToken, err := jwt_services.CreateAccessToken(params.Password) 
+	 accessToken, err := jwt_services.CreateAccessToken(params.Username) 
 	 if err != nil {
 		 log.Printf("Failed to create access token: %v", err)
 		 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create access token"})
 	 }
  
-	 refreshToken, err := jwt_services.CreateRefreshToken(params.Password) 
+	 refreshToken, err := jwt_services.CreateRefreshToken(params.Username) 
 	 if err != nil {
 		 log.Printf("Failed to create refresh token: %v", err)
 		 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create refresh token"})
 	 }
 
-	params.Password = hashPass
+	params.Password = encodedHash
 	userID, err := queries.CreateUser(ctx, params)
 	if err != nil {
 		log.Printf("Failed to create user: %v", err)
@@ -63,8 +60,6 @@ func CreateUser(c echo.Context) error {
         UserID: sql.NullInt32{Int32: userID, Valid: true},
         Code:   verificationCode,
     }
-
-	
 
     if _, err := queries.VerificationCodeCreate(ctx, verificationParams); err != nil {
         log.Printf("Failed to create verification code: %v", err)
@@ -79,61 +74,71 @@ func CreateUser(c echo.Context) error {
     return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully","accessToken": accessToken,"refreshToken":refreshToken})
 }
 
-
-
 func LoginUser(c echo.Context) error {
 	ctx := context.Background()
 
-	var params db.LoginUserParams
-	if err := c.Bind(&params); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
-	}
-
-	fmt.Printf("Params: %+v", params)
-
-	connStr := "postgres://postgres:abc123@localhost:5432/flashcards?sslmode=disable"
-	dbConn, err := sql.Open("postgres", connStr)
+	// Veritabanı bağlantısını aç
+	queries, err := helpers.OpenDatabaseConnection()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database connection failed"})
-	}
-	defer dbConn.Close()
-
-	if err := dbConn.Ping(); err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to ping database"})
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Database connection failed",
+		})
 	}
 
-	queries := db.New(dbConn)
-	log.Printf("Executing LoginUser query")
-	user, err := queries.LoginUser(ctx, params)
-	log.Printf("Query executed")
+	// Giriş için gerekli parametreleri al (Artık LoginUserParams yok)
+	var loginRequest struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	if err := c.Bind(&loginRequest); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Invalid input",
+		})
+	}
+
+	log.Printf("Attempting to login user with email: %s", loginRequest.Email)
+
+	// Kullanıcının hash'lenmiş şifresini veritabanından al
+	hashPass, err := queries.GetHashPass(ctx, loginRequest.Email)
 	if err != nil {
-		log.Printf("LoginUser error: %v", err)
 		if err == sql.ErrNoRows {
-			log.Printf("No user found for email: %s", params.Email)
-			return c.JSON(http.StatusNotFound, map[string]string{"message": "Not Found"})
+			return c.JSON(http.StatusUnauthorized, map[string]string{
+				"error":   "Invalid email or password",
+				"details": "No account found with this email",
+			})
 		}
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to login user"})
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to retrieve user",
+		})
 	}
-	
-	log.Printf("User logged in successfully: %+v", user)
-	
 
-	log.Printf("User found: %+v", user)
+	// Şifreyi doğrula
+	if !hash_services.VerifyPassword(loginRequest.Password, hashPass) {
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"error":   "Invalid email or password",
+			"details": "Password is incorrect",
+		})
+	}
 
+	// Şifre doğrulandı, kullanıcı bilgilerini çek
+	user, err := queries.GetUserByEmail(ctx, loginRequest.Email) 
+	if err != nil {
+		log.Printf("GetUserByEmail error: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error":   "Login failed",
+			"details": "Database error occurred",
+		})
+	}
+
+	// Başarılı yanıt
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"message": "User logged in successfully",
-		"user":    map[string]interface{}{
-			"id": user.ID,
+		"user": map[string]interface{}{
+			"id":    user.ID,
 			"email": user.Email,
-			"name": user.Name,
+			"name":  user.Name,
 			"surname": user.Surname,
-			"is_verified": user.IsVerified,
-			"username": user.Username,
+
 		},
 	})
-}
-
-
-func UserVerify(c echo.Context) error {
-	return nil
 }

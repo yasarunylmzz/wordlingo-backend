@@ -47,8 +47,8 @@ func (q *Queries) CreateDesk(ctx context.Context, arg CreateDeskParams) error {
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (name, surname, username, email, password, salt_code) 
-VALUES ($1, $2, $3, $4, $5, $6) 
+INSERT INTO users (name, surname, username, email, password) 
+VALUES ($1, $2, $3, $4, $5) 
 RETURNING id
 `
 
@@ -58,7 +58,6 @@ type CreateUserParams struct {
 	Username string
 	Email    string
 	Password string
-	SaltCode string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int32, error) {
@@ -68,7 +67,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int32, 
 		arg.Username,
 		arg.Email,
 		arg.Password,
-		arg.SaltCode,
 	)
 	var id int32
 	err := row.Scan(&id)
@@ -222,15 +220,29 @@ func (q *Queries) GetDesksByUserId(ctx context.Context, userID int32) ([]GetDesk
 	return items, nil
 }
 
+const getHashPass = `-- name: GetHashPass :one
+SELECT password 
+FROM users 
+WHERE email = $1
+`
+
+func (q *Queries) GetHashPass(ctx context.Context, email string) (string, error) {
+	row := q.db.QueryRowContext(ctx, getHashPass, email)
+	var password string
+	err := row.Scan(&password)
+	return password, err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, email, password FROM users WHERE email = $1
+SELECT id, name, surname, username, email FROM users WHERE email = $1
 `
 
 type GetUserByEmailRow struct {
 	ID       int32
 	Name     string
+	Surname  string
+	Username string
 	Email    string
-	Password string
 }
 
 // User-related queries
@@ -240,8 +252,9 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Surname,
+		&i.Username,
 		&i.Email,
-		&i.Password,
 	)
 	return i, err
 }
@@ -259,40 +272,6 @@ func (q *Queries) IsUserVerified(ctx context.Context, id int32) (IsUserVerifiedR
 	row := q.db.QueryRowContext(ctx, isUserVerified, id)
 	var i IsUserVerifiedRow
 	err := row.Scan(&i.IsVerified, &i.Email)
-	return i, err
-}
-
-const loginUser = `-- name: LoginUser :one
-SELECT id, name, email, surname, is_verified, username 
-FROM users 
-WHERE (email = $1 OR username = $1) AND password = $2
-`
-
-type LoginUserParams struct {
-	Email    string
-	Password string
-}
-
-type LoginUserRow struct {
-	ID         int32
-	Name       string
-	Email      string
-	Surname    string
-	IsVerified sql.NullBool
-	Username   string
-}
-
-func (q *Queries) LoginUser(ctx context.Context, arg LoginUserParams) (LoginUserRow, error) {
-	row := q.db.QueryRowContext(ctx, loginUser, arg.Email, arg.Password)
-	var i LoginUserRow
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Email,
-		&i.Surname,
-		&i.IsVerified,
-		&i.Username,
-	)
 	return i, err
 }
 
