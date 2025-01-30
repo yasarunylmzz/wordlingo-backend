@@ -19,7 +19,7 @@ import (
 func CreateUser(c echo.Context) error {
     ctx := context.Background()
     var params db.CreateUserParams
-	queries, err := helpers.OpenDatabaseConnection()
+	queries,dbConn, err := helpers.OpenDatabaseConnection()
 
     if err := c.Bind(&params); err != nil {
         return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
@@ -70,6 +70,7 @@ func CreateUser(c echo.Context) error {
         log.Printf("Failed to send email: %v", err)
         return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to send email"})
     }
+	defer dbConn.Close()
 
     return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully","accessToken": accessToken,"refreshToken":refreshToken})
 }
@@ -77,15 +78,13 @@ func CreateUser(c echo.Context) error {
 func LoginUser(c echo.Context) error {
 	ctx := context.Background()
 
-	// Veritabanı bağlantısını aç
-	queries, err := helpers.OpenDatabaseConnection()
+	queries,dbConn, err := helpers.OpenDatabaseConnection()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Database connection failed",
 		})
 	}
 
-	// Giriş için gerekli parametreleri al (Artık LoginUserParams yok)
 	var loginRequest struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -98,7 +97,6 @@ func LoginUser(c echo.Context) error {
 
 	log.Printf("Attempting to login user with email: %s", loginRequest.Email)
 
-	// Kullanıcının hash'lenmiş şifresini veritabanından al
 	hashPass, err := queries.GetHashPass(ctx, loginRequest.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -112,7 +110,6 @@ func LoginUser(c echo.Context) error {
 		})
 	}
 
-	// Şifreyi doğrula
 	if !hash_services.VerifyPassword(loginRequest.Password, hashPass) {
 		return c.JSON(http.StatusUnauthorized, map[string]string{
 			"error":   "Invalid email or password",
@@ -120,7 +117,6 @@ func LoginUser(c echo.Context) error {
 		})
 	}
 
-	// Şifre doğrulandı, kullanıcı bilgilerini çek
 	user, err := queries.GetUserByEmail(ctx, loginRequest.Email) 
 	if err != nil {
 		log.Printf("GetUserByEmail error: %v", err)
@@ -130,7 +126,22 @@ func LoginUser(c echo.Context) error {
 		})
 	}
 
-	// Başarılı yanıt
+	if !user.IsVerified.Valid || (user.IsVerified.Valid && !user.IsVerified.Bool) {
+		log.Printf("verification is false or not set")
+		return c.JSON(http.StatusNonAuthoritativeInfo, map[string]interface{}{
+			"error":   "verification required",
+			"details": "please complete verification process",
+			"user": map[string]interface{}{
+				"id": user.ID,
+				"email": user.Email,
+				"name":  user.Name,
+				"surname": user.Surname,
+				"is_verified": user.IsVerified.Bool,
+			},
+		})
+	}
+	defer dbConn.Close()
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"message": "User logged in successfully",
 		"user": map[string]interface{}{
@@ -138,7 +149,33 @@ func LoginUser(c echo.Context) error {
 			"email": user.Email,
 			"name":  user.Name,
 			"surname": user.Surname,
-
+			"is_verified": user.IsVerified.Bool,
 		},
+	})
+}
+
+func UserVerification(c echo.Context) error {
+	ctx := context.Background()
+	queries,dbConn, err := helpers.OpenDatabaseConnection()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Database connection failed",
+		})
+	}
+
+	var params db.VerifyUserParams
+	if err := c.Bind(&params); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+	}
+
+	if err := queries.VerifyUser(ctx, params); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "User verification failed",
+		})
+	}
+	defer dbConn.Close() // İşin bittiğinde bağlantıyı kapat
+
+	return c.JSON(http.StatusAccepted, map[string]string{
+		"message": "User verified successfully",
 	})
 }

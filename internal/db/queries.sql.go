@@ -234,15 +234,16 @@ func (q *Queries) GetHashPass(ctx context.Context, email string) (string, error)
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, surname, username, email FROM users WHERE email = $1
+SELECT id, name, surname, username, email, is_verified FROM users WHERE email = $1
 `
 
 type GetUserByEmailRow struct {
-	ID       int32
-	Name     string
-	Surname  string
-	Username string
-	Email    string
+	ID         int32
+	Name       string
+	Surname    string
+	Username   string
+	Email      string
+	IsVerified sql.NullBool
 }
 
 // User-related queries
@@ -255,6 +256,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 		&i.Surname,
 		&i.Username,
 		&i.Email,
+		&i.IsVerified,
 	)
 	return i, err
 }
@@ -359,17 +361,27 @@ func (q *Queries) VerificationCodeCreate(ctx context.Context, arg VerificationCo
 }
 
 const verifyUser = `-- name: VerifyUser :exec
-UPDATE users 
-SET is_verified = true 
-WHERE id = $1 AND email = $2
+WITH delete_verification AS (
+  DELETE FROM verification_codes
+  WHERE user_id = $1
+    AND code = $3
+    AND expires_at > NOW()
+  RETURNING user_id
+)
+UPDATE users
+SET is_verified = TRUE
+WHERE users.id = $1 -- users tablosunun id'si
+  AND users.email = $2 -- users tablosunun email'i
+  AND EXISTS (SELECT 1 FROM delete_verification)
 `
 
 type VerifyUserParams struct {
 	ID    int32
 	Email string
+	Code  string
 }
 
 func (q *Queries) VerifyUser(ctx context.Context, arg VerifyUserParams) error {
-	_, err := q.db.ExecContext(ctx, verifyUser, arg.ID, arg.Email)
+	_, err := q.db.ExecContext(ctx, verifyUser, arg.ID, arg.Email, arg.Code)
 	return err
 }

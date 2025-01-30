@@ -1,6 +1,6 @@
 -- User-related queries
 -- name: GetUserByEmail :one
-SELECT id, name, surname, username, email FROM users WHERE email = $1;
+SELECT id, name, surname, username, email, is_verified FROM users WHERE email = $1;
 
 -- name: CreateUser :one
 INSERT INTO users (name, surname, username, email, password) 
@@ -53,11 +53,21 @@ RETURNING id;
 SELECT is_verified, email FROM users WHERE id = $1;
 
 -- name: VerifyUser :exec
-UPDATE users 
-SET is_verified = true 
-WHERE id = $1 AND email = $2;
+WITH delete_verification AS (
+  DELETE FROM verification_codes
+  WHERE user_id = $1
+    AND code = $3
+    AND expires_at > NOW()
+  RETURNING user_id
+)
+UPDATE users
+SET is_verified = TRUE
+WHERE users.id = $1 -- users tablosunun id'si
+  AND users.email = $2 -- users tablosunun email'i
+  AND EXISTS (SELECT 1 FROM delete_verification);
 
 -- name: GetHashPass :one
 SELECT password 
 FROM users 
 WHERE email = $1;
+
