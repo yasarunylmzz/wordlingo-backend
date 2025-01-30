@@ -11,7 +11,7 @@ func RegisterUserRoutes(e *echo.Echo) {
 }
 
 func LoginUserRoutes(e *echo.Echo){
-	e.GET("/login", controllers.LoginUser)
+	e.POST("/login", controllers.LoginUser)
 }
 
 func VerificationUserRouters(e *echo.Echo){
