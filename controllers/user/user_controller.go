@@ -1,5 +1,5 @@
 // controllers/user_controller.go
-package controllers
+package user_controller
 
 import (
 	"context"
@@ -35,18 +35,6 @@ func CreateUser(c echo.Context) error {
 		log.Printf("Şifre hash'lenemedi: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "password_hashing_failed"})
 	}
-	
-	 accessToken, err := jwt_services.CreateAccessToken(params.Username) 
-	 if err != nil {
-		 log.Printf("Failed to create access token: %v", err)
-		 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create access token"})
-	 }
- 
-	 refreshToken, err := jwt_services.CreateRefreshToken(params.Username) 
-	 if err != nil {
-		 log.Printf("Failed to create refresh token: %v", err)
-		 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create refresh token"})
-	 }
 
 	params.Password = encodedHash
 	userID, err := queries.CreateUser(ctx, params)
@@ -72,7 +60,7 @@ func CreateUser(c echo.Context) error {
     }
 	defer dbConn.Close()
 
-    return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully","accessToken": accessToken,"refreshToken":refreshToken})
+    return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully"})
 }
 
 func LoginUser(c echo.Context) error {
@@ -125,6 +113,17 @@ func LoginUser(c echo.Context) error {
 			"details": "Database error occurred",
 		})
 	}
+	accessToken, err := jwt_services.CreateAccessToken(user.Username, user.Name, user.Email, user.Surname, int(user.ID))
+	if err != nil {
+		 log.Printf("Failed to create access token: %v", err)
+		 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create access token"})
+	 }
+ 
+	 refreshToken, err := jwt_services.CreateRefreshToken(user.Username, user.Name, user.Email, user.Surname, int(user.ID))
+	 if err != nil {
+		 log.Printf("Failed to create refresh token: %v", err)
+		 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create refresh token"})
+	 }
 
 	if !user.IsVerified.Valid || (user.IsVerified.Valid && !user.IsVerified.Bool) {
 		log.Printf("verification is false or not set")
@@ -150,7 +149,10 @@ func LoginUser(c echo.Context) error {
 			"name":  user.Name,
 			"surname": user.Surname,
 			"is_verified": user.IsVerified.Bool,
+			
 		},
+		"access_token": accessToken,
+		"refresh_token":refreshToken,
 	})
 }
 
