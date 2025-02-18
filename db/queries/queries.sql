@@ -71,3 +71,7 @@ SELECT password
 FROM users 
 WHERE email = $1;
 
+-- name: GetUserbyId :one
+SELECT id, name, surname, username, email, is_verified
+FROM users
+WHERE id = $1;

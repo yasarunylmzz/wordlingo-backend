@@ -261,6 +261,35 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 	return i, err
 }
 
+const getUserbyId = `-- name: GetUserbyId :one
+SELECT id, name, surname, username, email, is_verified
+FROM users
+WHERE id = $1
+`
+
+type GetUserbyIdRow struct {
+	ID         int32
+	Name       string
+	Surname    string
+	Username   string
+	Email      string
+	IsVerified sql.NullBool
+}
+
+func (q *Queries) GetUserbyId(ctx context.Context, id int32) (GetUserbyIdRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserbyId, id)
+	var i GetUserbyIdRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Surname,
+		&i.Username,
+		&i.Email,
+		&i.IsVerified,
+	)
+	return i, err
+}
+
 const isUserVerified = `-- name: IsUserVerified :one
 SELECT is_verified, email FROM users WHERE id = $1
 `
