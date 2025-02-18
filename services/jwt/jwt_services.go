@@ -1,3 +1,4 @@
+// services/jwt_services.go
 package jwt_services
 
 import (
@@ -10,62 +11,70 @@ import (
 
 var secretKey = []byte(os.Getenv("JWT_SECRET"))
 
-// CreateAccessToken generates a short-lived access token (e.g., 15 minutes)
-func CreateAccessToken(username, name, email, surname string, id int) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": username,
-		"email":    email,
-		"name":     name,
-		"surname":  surname,
-		"id":       id,
-		"exp":      time.Now().Add(time.Minute * 15).Unix(), // 15-minute expiry
-	})
+// createAccessToken creates an access token (short-lived).
+func CreateAccessToken(username,name, email, surname string, id int) (string, error) {
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256,
+        jwt.MapClaims{
+            "username": username,
+            "emaik":email,
+            "name":name,
+            "surname":surname,
+            "id":id,
+            "exp":      time.Now().Add(time.Hour * 24 * 7).Unix(), // Access token expires in 1 week
+        })
 
-	return token.SignedString(secretKey)
+    tokenString, err := token.SignedString(secretKey)
+    if err != nil {
+        return "", err
+    }
+
+    return tokenString, nil
 }
 
-// CreateRefreshToken generates a long-lived refresh token (e.g., 30 days)
-func CreateRefreshToken(username, name, email, surname string, id int) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": username,
-		"email":    email,
-		"name":     name,
-		"surname":  surname,
-		"id":       id,
-		"exp":      time.Now().Add(time.Hour * 24 * 30).Unix(), // 30 days expiry
-	})
+// createRefreshToken creates a refresh token (long-lived).
+func CreateRefreshToken(username,name, email, surname string, id int) (string, error) {
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256,
+        jwt.MapClaims{
+            "username": username,
+            "emaik":email,
+            "name":name,
+            "surname":surname,
+            "id":id,
+            "exp":      time.Now().Add(time.Hour * 24 * 30).Unix(), // Refresh token expires in 1 month
+        })
 
-	return token.SignedString(secretKey)
+    tokenString, err := token.SignedString(secretKey)
+    if err != nil {
+        return "", err
+    }
+
+    return tokenString, nil
 }
 
-// VerifyAccessToken checks if the given access token is valid
+// Verify Access Token
 func VerifyAccessToken(tokenString string) (*jwt.Token, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Validate signing method
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Method.Alg())
-		}
-		return secretKey, nil
-	})
-
-	if err != nil || !token.Valid {
-		return nil, fmt.Errorf("invalid access token")
-	}
-	return token, nil
+    token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+        if token.Method != jwt.SigningMethodHS256 {
+            return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+        }
+        return secretKey, nil
+    })
+    if err != nil || !token.Valid {
+        return nil, fmt.Errorf("invalid access token")
+    }
+    return token, nil
 }
 
-// VerifyRefreshToken checks if the given refresh token is valid
+// Verify Refresh Token
 func VerifyRefreshToken(tokenString string) (*jwt.Token, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Validate signing method
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Method.Alg())
-		}
-		return secretKey, nil
-	})
-
-	if err != nil || !token.Valid {
-		return nil, fmt.Errorf("invalid refresh token")
-	}
-	return token, nil
+    token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+        if token.Method != jwt.SigningMethodHS256 {
+            return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+        }
+        return secretKey, nil
+    })
+    if err != nil || !token.Valid {
+        return nil, fmt.Errorf("invalid refresh token")
+    }
+    return token, nil
 }

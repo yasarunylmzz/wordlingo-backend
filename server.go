@@ -21,5 +21,6 @@ func main() {
 	routes.RegisterUserRoutes(e)
 	routes.LoginUserRoutes(e)
 	routes.VerificationUserRouters(e)
+	routes.RefreshTokenRoutes(e)
 	e.Logger.Fatal(e.Start(":1323"))
 }
