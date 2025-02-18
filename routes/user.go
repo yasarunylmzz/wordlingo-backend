@@ -2,8 +2,7 @@ package routes
 
 import (
 	"github.com/labstack/echo"
-	jwt_controllers "github.com/yasarunylmzz/wordlingo-backend/controllers/jwt"
-	user_controller "github.com/yasarunylmzz/wordlingo-backend/controllers/user"
+	user_controller "github.com/yasarunylmzz/wordlingo-backend/controllers/user/user_controller.go"
 )
 
 func RegisterUserRoutes(e *echo.Echo) {

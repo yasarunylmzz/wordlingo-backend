@@ -1,4 +1,4 @@
-package jwt_controllers
+package jwt_controller
 
 import (
 	"database/sql"
