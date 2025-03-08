@@ -63,6 +63,7 @@ func CreateUser(c echo.Context) error {
     return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully"})
 }
 
+
 func LoginUser(c echo.Context) error {
 	ctx := context.Background()
 

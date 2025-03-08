@@ -2,7 +2,6 @@ package routes
 
 import (
 	"github.com/labstack/echo/v4"
-	jwt_controller "github.com/yasarunylmzz/wordlingo-backend/controllers/jwt"
 	user_controller "github.com/yasarunylmzz/wordlingo-backend/controllers/user"
 )
 
@@ -18,6 +17,6 @@ func VerificationUserRouters(e *echo.Echo){
 	e.POST("/verification", user_controller.UserVerification)
 }
 
-func RefreshTokenRoutes(e *echo.Echo){
-	e.POST("/refresh-token",jwt_controller.RefreshAccessToken)
+func CreateDesk(e *echo.Echo){
+	e.POST("/create-desk",desk_controller.createDesk)
 }

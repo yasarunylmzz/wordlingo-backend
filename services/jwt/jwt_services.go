@@ -16,11 +16,11 @@ func CreateAccessToken(username,name, email, surname string, id int) (string, er
     token := jwt.NewWithClaims(jwt.SigningMethodHS256,
         jwt.MapClaims{
             "username": username,
-            "emaik":email,
+            "email":email,
             "name":name,
             "surname":surname,
             "id":id,
-            "exp":      time.Now().Add(time.Hour * 24 * 7).Unix(), // Access token expires in 1 week
+            "exp":      time.Now().Add(time.Minute * 15).Unix(), // Access token expires in 15 minute
         })
 
     tokenString, err := token.SignedString(secretKey)
@@ -36,11 +36,11 @@ func CreateRefreshToken(username,name, email, surname string, id int) (string, e
     token := jwt.NewWithClaims(jwt.SigningMethodHS256,
         jwt.MapClaims{
             "username": username,
-            "emaik":email,
+            "email":email,
             "name":name,
             "surname":surname,
             "id":id,
-            "exp":      time.Now().Add(time.Hour * 24 * 30).Unix(), // Refresh token expires in 1 month
+            "exp":      time.Now().Add(time.Hour * 24 * 30 * 12).Unix(), // Refresh token expires in 1 year
         })
 
     tokenString, err := token.SignedString(secretKey)
@@ -53,28 +53,40 @@ func CreateRefreshToken(username,name, email, surname string, id int) (string, e
 
 // Verify Access Token
 func VerifyAccessToken(tokenString string) (*jwt.Token, error) {
-    token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+   token, err := jwt.ParseWithClaims(tokenString,jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
         if token.Method != jwt.SigningMethodHS256 {
             return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
         }
         return secretKey, nil
     })
+
+
     if err != nil || !token.Valid {
         return nil, fmt.Errorf("invalid access token")
     }
+
+    claims, ok := token.Claims.(jwt.MapClaims)
+    if !ok {
+        return nil, fmt.Errorf("invalid claims")
+    }
+
+    if exp, ok := claims["exp"].(float64); ok {
+        if time.Now().Unix() > int64(exp) {
+            return nil, fmt.Errorf("access token expired")
+        }
+    }
+
     return token, nil
+
 }
 
 // Verify Refresh Token
 func VerifyRefreshToken(tokenString string) (*jwt.Token, error) {
-    token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+    return jwt.ParseWithClaims(tokenString,jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
         if token.Method != jwt.SigningMethodHS256 {
             return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
         }
         return secretKey, nil
     })
-    if err != nil || !token.Valid {
-        return nil, fmt.Errorf("invalid refresh token")
-    }
-    return token, nil
+
 }

@@ -11,7 +11,7 @@ CREATE TABLE users (
 CREATE TABLE desk (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
-    image_link TEXT,
+    image_url TEXT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -25,7 +25,7 @@ CREATE TABLE card (
     desk_id INTEGER NOT NULL,
     importance_value INTEGER DEFAULT 0,
     FOREIGN KEY (desk_id) REFERENCES desk(id) ON DELETE CASCADE
-);
+); 
 
 CREATE TABLE todo (
     id SERIAL PRIMARY KEY,
