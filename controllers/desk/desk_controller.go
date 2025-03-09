@@ -45,3 +45,32 @@ func CreateDesk(c echo.Context) error {
         return ""  // veya default bir değer
     }(),})
 }
+
+func UpdateDesk(c echo.Context) error {
+	ctx := context.Background()
+	var params db.UpdateDeskParams
+	queries, dbConn, err := helpers.OpenDatabaseConnection()
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError,map[string]string{"message":"internal server error"})
+	}
+
+	if c.Bind(&params); err != nil{
+		return c.JSON(http.StatusBadRequest, map[string]string{"message":"Invalid Input"})
+	}
+
+	err = queries.UpdateDesk(ctx, params)
+	if err != nil {
+		return c.JSON(http.StatusNotAcceptable, map[string]string{"message":err.Error(),"message2":"erroorrr"})
+	}
+
+	dbConn.Close()
+
+	return c.JSON(http.StatusOK, map[string]string{"message":"ok"})
+}
+
+func DeleteDesk(c echo.Context) error {
+
+	return c.JSON(http.StatusOK, map[string]string{"message":"ok"})
+
+}

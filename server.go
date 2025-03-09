@@ -22,5 +22,6 @@ func main() {
 	routes.LoginUserRoutes(e)
 	routes.VerificationUserRouters(e)
 	routes.CreateDesk(e)
+	routes.UpdateDesk(e)
 	e.Logger.Fatal(e.Start(":1323"))
 }

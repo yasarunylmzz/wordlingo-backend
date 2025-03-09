@@ -325,14 +325,15 @@ const updateDesk = `-- name: UpdateDesk :exec
 UPDATE desk 
 SET title = COALESCE($1,title),
     description = COALESCE($2,description) ,
-    image_link = $3
-WHERE id = $3 AND user_id=$4
+    image_link = COALESCE($3,image_link)
+WHERE id = $4 AND user_id=$5
 `
 
 type UpdateDeskParams struct {
 	Title       string
 	Description string
 	ImageLink   sql.NullString
+	ID          int32
 	UserID      int32
 }
 
@@ -341,6 +342,7 @@ func (q *Queries) UpdateDesk(ctx context.Context, arg UpdateDeskParams) error {
 		arg.Title,
 		arg.Description,
 		arg.ImageLink,
+		arg.ID,
 		arg.UserID,
 	)
 	return err

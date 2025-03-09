@@ -22,3 +22,7 @@ func VerificationUserRouters(e *echo.Echo){
 func CreateDesk(e *echo.Echo){
 	e.POST("/create-desk", desk_controller.CreateDesk, jwt_middleware.RefreshAccessTokenMiddleware)
 }
+
+func UpdateDesk(e *echo.Echo){
+	e.PATCH("/update-desk", desk_controller.UpdateDesk, jwt_middleware.RefreshAccessTokenMiddleware)
+}

@@ -28,8 +28,8 @@ INSERT INTO desk (title, description, image_link, user_id) VALUES ($1, $2, $3, $
 UPDATE desk 
 SET title = COALESCE($1,title),
     description = COALESCE($2,description) ,
-    image_link = $3
-WHERE id = $3 AND user_id=$4;
+    image_link = COALESCE($3,image_link)
+WHERE id = $4 AND user_id=$5;
 
 -- name: DeleteDesk :exec
 DELETE FROM desk WHERE id = $1 AND user_id=$2;
