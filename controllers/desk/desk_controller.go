@@ -70,6 +70,27 @@ func UpdateDesk(c echo.Context) error {
 }
 
 func DeleteDesk(c echo.Context) error {
+	ctx := context.Background()
+	var params db.DeleteDeskParams
+	queries, dbConn, err := helpers.OpenDatabaseConnection()
+
+	if err != nil{
+		return c.JSON(http.StatusInternalServerError, map[string]string{"message":"internal server error"})
+	}
+
+	if c.Bind(&params); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message":"Invalid Input"})
+	}
+
+	err = queries.DeleteDesk(ctx, params)
+
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"message":err.Error(),
+		})
+	}
+
+	dbConn.Close()
 
 	return c.JSON(http.StatusOK, map[string]string{"message":"ok"})
 

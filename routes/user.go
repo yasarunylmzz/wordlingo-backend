@@ -26,3 +26,7 @@ func CreateDesk(e *echo.Echo){
 func UpdateDesk(e *echo.Echo){
 	e.PATCH("/update-desk", desk_controller.UpdateDesk, jwt_middleware.RefreshAccessTokenMiddleware)
 }
+
+func DeleteDesk(e *echo.Echo) {
+	e.DELETE("/delete-desk", desk_controller.DeleteDesk, jwt_middleware.RefreshAccessTokenMiddleware)
+}

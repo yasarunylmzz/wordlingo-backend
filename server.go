@@ -23,5 +23,6 @@ func main() {
 	routes.VerificationUserRouters(e)
 	routes.CreateDesk(e)
 	routes.UpdateDesk(e)
+	routes.DeleteDesk(e)
 	e.Logger.Fatal(e.Start(":1323"))
 }
