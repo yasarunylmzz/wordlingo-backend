@@ -2,7 +2,9 @@ package routes
 
 import (
 	"github.com/labstack/echo/v4"
+	desk_controller "github.com/yasarunylmzz/wordlingo-backend/controllers/desk"
 	user_controller "github.com/yasarunylmzz/wordlingo-backend/controllers/user"
+	jwt_middleware "github.com/yasarunylmzz/wordlingo-backend/middleware/jwt"
 )
 
 func RegisterUserRoutes(e *echo.Echo) {
@@ -18,5 +20,5 @@ func VerificationUserRouters(e *echo.Echo){
 }
 
 func CreateDesk(e *echo.Echo){
-	e.POST("/create-desk",desk_controller.createDesk)
+	e.POST("/create-desk", desk_controller.CreateDesk, jwt_middleware.RefreshAccessTokenMiddleware)
 }

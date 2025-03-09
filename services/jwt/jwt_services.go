@@ -60,7 +60,7 @@ func VerifyAccessToken(tokenString string) (*jwt.Token, error) {
         return secretKey, nil
     })
 
-
+    // fmt.Print(token)
     if err != nil || !token.Valid {
         return nil, fmt.Errorf("invalid access token")
     }

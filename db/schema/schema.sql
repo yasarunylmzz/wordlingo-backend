@@ -11,7 +11,7 @@ CREATE TABLE users (
 CREATE TABLE desk (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
-    image_url TEXT,
+    image_link TEXT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

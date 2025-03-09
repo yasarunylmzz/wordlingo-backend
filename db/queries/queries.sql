@@ -1,8 +1,8 @@
 -- User-related queries
--- name: GetUserbyId :one
+-- name: GetUserByEmail :one
 SELECT id, name, surname, username, email, is_verified
 FROM users
-WHERE id = $1;
+WHERE email = $1;
 
 -- name: CreateUser :one
 INSERT INTO users (name, surname, username, email, password) 
@@ -22,13 +22,13 @@ UPDATE users SET password = $1 WHERE id = $2;
 
 -- Desk-related queries
 -- name: CreateDesk :exec
-INSERT INTO desk (title, description,image_url, user_id) VALUES ($1, $2, $3);
+INSERT INTO desk (title, description, image_link, user_id) VALUES ($1, $2, $3, $4);
 
 -- name: UpdateDesk :exec
 UPDATE desk 
 SET title = COALESCE($1,title),
     description = COALESCE($2,description) ,
-    image_url = $3
+    image_link = $3
 WHERE id = $3 AND user_id=$4;
 
 -- name: DeleteDesk :exec
@@ -42,13 +42,13 @@ SELECT id, title, description, user_id FROM desk WHERE user_id = $1;
 
 -- Card-related queries
 -- name: CreateCard :exec
-INSERT INTO card (language_1, language_2, description, desk_id, user_id) VALUES ($1, $2, $3, $4, $5);
+INSERT INTO card (language_1, language_2, description,importance_value, desk_id) VALUES ($1, $2, $3, $4, $5);
 
 -- name: UpdateCard :exec
-UPDATE card SET language_1 = $1, language_2 = $2, description = $3 WHERE id = $4 AND user_id = $5;
+UPDATE card SET language_1 = $1, language_2 = $2, description = $3 WHERE id = $4 AND desk_id = $5;
 
 -- name: DeleteCard :exec
-DELETE FROM card WHERE id = $1 AND user_id = $2;
+DELETE FROM card WHERE id = $1 AND desk_id = $2;
 
 -- name: GetCardById :one
 SELECT id, language_1, language_2, description, desk_id FROM card WHERE id = $1;

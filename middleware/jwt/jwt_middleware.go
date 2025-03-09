@@ -1,6 +1,9 @@
 package jwt_middleware
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -28,6 +31,14 @@ func RefreshAccessTokenMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"message": "Invalid or expired refresh token"})
 		}
 
+		// **Request body’yi oku ve sakla**
+		bodyBytes, err := io.ReadAll(c.Request().Body)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to read request body"})
+		}
+		// **Request body’yi tekrar kullanılabilir yap**
+		c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		
 		var request struct {
 			AccessToken string `json:"access_token"`
 		}
@@ -36,20 +47,21 @@ func RefreshAccessTokenMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid request payload"})
 		}
 
+		c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
 		//verify access token
 		_, err = jwt_services.VerifyAccessToken(request.AccessToken)
-		// fmt.Print(err)
-		if err == nil {
-			return c.JSON(http.StatusOK, map[string]string{"message": "Access token is still valid","access_token": request.AccessToken,"refresh_token":tokenString})
-		}
-
-		newAccessToken, err := jwt_services.CreateAccessToken("username", "name", "email", "surname", 1)
+		fmt.Print(err)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Could not generate new access token"})
+			newAccessToken, err := jwt_services.CreateAccessToken("username", "name", "email", "surname", 1)
+			if err != nil{
+				return c.JSON(http.StatusNotAcceptable, map[string]string{"message":err.Error()})
+			}
+			c.Response().Header().Set("New-Access-Token", newAccessToken)
+			return c.JSON(http.StatusBadRequest, map[string]string{"message":"please take new access token in headers"})
 		}
 
-		// if access token is invalid return newAccessToken
-		return c.JSON(http.StatusOK, map[string]string{"access_token": newAccessToken,"refresh_token": tokenString})
+		return next(c)
 
 
 	}

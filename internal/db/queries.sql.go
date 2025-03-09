@@ -11,38 +11,48 @@ import (
 )
 
 const createCard = `-- name: CreateCard :exec
-INSERT INTO card (language_1, language_2, description, desk_id) VALUES ($1, $2, $3, $4)
+INSERT INTO card (language_1, language_2, description,importance_value, desk_id) VALUES ($1, $2, $3, $4, $5)
 `
 
 type CreateCardParams struct {
-	Language1   string
-	Language2   string
-	Description string
-	DeskID      int32
+	Language1       string
+	Language2       string
+	Description     string
+	ImportanceValue sql.NullInt32
+	DeskID          int32
 }
 
+// Card-related queries
 func (q *Queries) CreateCard(ctx context.Context, arg CreateCardParams) error {
 	_, err := q.db.ExecContext(ctx, createCard,
 		arg.Language1,
 		arg.Language2,
 		arg.Description,
+		arg.ImportanceValue,
 		arg.DeskID,
 	)
 	return err
 }
 
 const createDesk = `-- name: CreateDesk :exec
-INSERT INTO desk (title, description, user_id) VALUES ($1, $2, $3)
+INSERT INTO desk (title, description, image_link, user_id) VALUES ($1, $2, $3, $4)
 `
 
 type CreateDeskParams struct {
 	Title       string
 	Description string
+	ImageLink   sql.NullString
 	UserID      int32
 }
 
+// Desk-related queries
 func (q *Queries) CreateDesk(ctx context.Context, arg CreateDeskParams) error {
-	_, err := q.db.ExecContext(ctx, createDesk, arg.Title, arg.Description, arg.UserID)
+	_, err := q.db.ExecContext(ctx, createDesk,
+		arg.Title,
+		arg.Description,
+		arg.ImageLink,
+		arg.UserID,
+	)
 	return err
 }
 
@@ -74,20 +84,30 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int32, 
 }
 
 const deleteCard = `-- name: DeleteCard :exec
-DELETE FROM card WHERE id = $1
+DELETE FROM card WHERE id = $1 AND desk_id = $2
 `
 
-func (q *Queries) DeleteCard(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteCard, id)
+type DeleteCardParams struct {
+	ID     int32
+	DeskID int32
+}
+
+func (q *Queries) DeleteCard(ctx context.Context, arg DeleteCardParams) error {
+	_, err := q.db.ExecContext(ctx, deleteCard, arg.ID, arg.DeskID)
 	return err
 }
 
 const deleteDesk = `-- name: DeleteDesk :exec
-DELETE FROM desk WHERE id = $1
+DELETE FROM desk WHERE id = $1 AND user_id=$2
 `
 
-func (q *Queries) DeleteDesk(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteDesk, id)
+type DeleteDeskParams struct {
+	ID     int32
+	UserID int32
+}
+
+func (q *Queries) DeleteDesk(ctx context.Context, arg DeleteDeskParams) error {
+	_, err := q.db.ExecContext(ctx, deleteDesk, arg.ID, arg.UserID)
 	return err
 }
 
@@ -103,7 +123,6 @@ type GetCardByIdRow struct {
 	DeskID      int32
 }
 
-// Card-related queries
 func (q *Queries) GetCardById(ctx context.Context, id int32) (GetCardByIdRow, error) {
 	row := q.db.QueryRowContext(ctx, getCardById, id)
 	var i GetCardByIdRow
@@ -234,7 +253,9 @@ func (q *Queries) GetHashPass(ctx context.Context, email string) (string, error)
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, surname, username, email, is_verified FROM users WHERE email = $1
+SELECT id, name, surname, username, email, is_verified
+FROM users
+WHERE email = $1
 `
 
 type GetUserByEmailRow struct {
@@ -250,35 +271,6 @@ type GetUserByEmailRow struct {
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
 	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
 	var i GetUserByEmailRow
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Surname,
-		&i.Username,
-		&i.Email,
-		&i.IsVerified,
-	)
-	return i, err
-}
-
-const getUserbyId = `-- name: GetUserbyId :one
-SELECT id, name, surname, username, email, is_verified
-FROM users
-WHERE id = $1
-`
-
-type GetUserbyIdRow struct {
-	ID         int32
-	Name       string
-	Surname    string
-	Username   string
-	Email      string
-	IsVerified sql.NullBool
-}
-
-func (q *Queries) GetUserbyId(ctx context.Context, id int32) (GetUserbyIdRow, error) {
-	row := q.db.QueryRowContext(ctx, getUserbyId, id)
-	var i GetUserbyIdRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -307,7 +299,7 @@ func (q *Queries) IsUserVerified(ctx context.Context, id int32) (IsUserVerifiedR
 }
 
 const updateCard = `-- name: UpdateCard :exec
-UPDATE card SET language_1 = $1, language_2 = $2, description = $3 WHERE id = $4
+UPDATE card SET language_1 = $1, language_2 = $2, description = $3 WHERE id = $4 AND desk_id = $5
 `
 
 type UpdateCardParams struct {
@@ -315,6 +307,7 @@ type UpdateCardParams struct {
 	Language2   string
 	Description string
 	ID          int32
+	DeskID      int32
 }
 
 func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) error {
@@ -323,51 +316,75 @@ func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) error {
 		arg.Language2,
 		arg.Description,
 		arg.ID,
+		arg.DeskID,
 	)
 	return err
 }
 
 const updateDesk = `-- name: UpdateDesk :exec
-UPDATE desk SET title = $1, description = $2 WHERE id = $3
+UPDATE desk 
+SET title = COALESCE($1,title),
+    description = COALESCE($2,description) ,
+    image_link = $3
+WHERE id = $3 AND user_id=$4
 `
 
 type UpdateDeskParams struct {
 	Title       string
 	Description string
-	ID          int32
+	ImageLink   sql.NullString
+	UserID      int32
 }
 
 func (q *Queries) UpdateDesk(ctx context.Context, arg UpdateDeskParams) error {
-	_, err := q.db.ExecContext(ctx, updateDesk, arg.Title, arg.Description, arg.ID)
+	_, err := q.db.ExecContext(ctx, updateDesk,
+		arg.Title,
+		arg.Description,
+		arg.ImageLink,
+		arg.UserID,
+	)
 	return err
 }
 
-const updateUserInfo = `-- name: UpdateUserInfo :exec
-UPDATE users SET name = $1, email = $2 WHERE id = $3
+const updateUser = `-- name: UpdateUser :exec
+UPDATE users 
+SET name = COALESCE($1, name),
+    surname = COALESCE($2, surname),
+    username = COALESCE($3, username),
+    email = COALESCE($4, email)
+WHERE id = $5
 `
 
-type UpdateUserInfoParams struct {
-	Name  string
-	Email string
-	ID    int32
+type UpdateUserParams struct {
+	Name     string
+	Surname  string
+	Username string
+	Email    string
+	ID       int32
 }
 
-func (q *Queries) UpdateUserInfo(ctx context.Context, arg UpdateUserInfoParams) error {
-	_, err := q.db.ExecContext(ctx, updateUserInfo, arg.Name, arg.Email, arg.ID)
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
+	_, err := q.db.ExecContext(ctx, updateUser,
+		arg.Name,
+		arg.Surname,
+		arg.Username,
+		arg.Email,
+		arg.ID,
+	)
 	return err
 }
 
 const updateUserPassword = `-- name: UpdateUserPassword :exec
-UPDATE users SET password = $1 WHERE email = $2
+UPDATE users SET password = $1 WHERE id = $2
 `
 
 type UpdateUserPasswordParams struct {
 	Password string
-	Email    string
+	ID       int32
 }
 
 func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
-	_, err := q.db.ExecContext(ctx, updateUserPassword, arg.Password, arg.Email)
+	_, err := q.db.ExecContext(ctx, updateUserPassword, arg.Password, arg.ID)
 	return err
 }
 
@@ -399,8 +416,8 @@ WITH delete_verification AS (
 )
 UPDATE users
 SET is_verified = TRUE
-WHERE users.id = $1 -- users tablosunun id'si
-  AND users.email = $2 -- users tablosunun email'i
+WHERE users.id = $1 
+  AND users.email = $2 
   AND EXISTS (SELECT 1 FROM delete_verification)
 `
 
