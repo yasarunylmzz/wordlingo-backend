@@ -30,3 +30,7 @@ func UpdateDesk(e *echo.Echo){
 func DeleteDesk(e *echo.Echo) {
 	e.DELETE("/delete-desk", desk_controller.DeleteDesk, jwt_middleware.RefreshAccessTokenMiddleware)
 }
+
+func GetAllDesk(e *echo.Echo) {
+	e.GET("/get-desk", desk_controller.GetAllDesk, jwt_middleware.RefreshAccessTokenMiddleware)
+}

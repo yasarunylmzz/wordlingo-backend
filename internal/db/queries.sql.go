@@ -111,6 +111,39 @@ func (q *Queries) DeleteDesk(ctx context.Context, arg DeleteDeskParams) error {
 	return err
 }
 
+const getAllDesksByUserId = `-- name: GetAllDesksByUserId :many
+SELECT id, user_id, image_link, title, description FROM desk WHERE user_id = $1
+`
+
+func (q *Queries) GetAllDesksByUserId(ctx context.Context, userID int32) ([]Desk, error) {
+	rows, err := q.db.QueryContext(ctx, getAllDesksByUserId, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Desk
+	for rows.Next() {
+		var i Desk
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.ImageLink,
+			&i.Title,
+			&i.Description,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getCardById = `-- name: GetCardById :one
 SELECT id, language_1, language_2, description, desk_id FROM card WHERE id = $1
 `
@@ -163,68 +196,6 @@ func (q *Queries) GetCardsByDeskId(ctx context.Context, deskID int32) ([]GetCard
 			&i.Language2,
 			&i.Description,
 			&i.DeskID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getDeskById = `-- name: GetDeskById :one
-SELECT id, title, description, user_id FROM desk WHERE id = $1
-`
-
-type GetDeskByIdRow struct {
-	ID          int32
-	Title       string
-	Description string
-	UserID      int32
-}
-
-func (q *Queries) GetDeskById(ctx context.Context, id int32) (GetDeskByIdRow, error) {
-	row := q.db.QueryRowContext(ctx, getDeskById, id)
-	var i GetDeskByIdRow
-	err := row.Scan(
-		&i.ID,
-		&i.Title,
-		&i.Description,
-		&i.UserID,
-	)
-	return i, err
-}
-
-const getDesksByUserId = `-- name: GetDesksByUserId :many
-SELECT id, title, description, user_id FROM desk WHERE user_id = $1
-`
-
-type GetDesksByUserIdRow struct {
-	ID          int32
-	Title       string
-	Description string
-	UserID      int32
-}
-
-func (q *Queries) GetDesksByUserId(ctx context.Context, userID int32) ([]GetDesksByUserIdRow, error) {
-	rows, err := q.db.QueryContext(ctx, getDesksByUserId, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetDesksByUserIdRow
-	for rows.Next() {
-		var i GetDesksByUserIdRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Title,
-			&i.Description,
-			&i.UserID,
 		); err != nil {
 			return nil, err
 		}

@@ -34,11 +34,8 @@ WHERE id = $4 AND user_id=$5;
 -- name: DeleteDesk :exec
 DELETE FROM desk WHERE id = $1 AND user_id=$2;
 
--- name: GetDeskById :one
-SELECT id, title, description, user_id FROM desk WHERE id = $1;
-
--- name: GetDesksByUserId :many
-SELECT id, title, description, user_id FROM desk WHERE user_id = $1;
+-- name: GetAllDesksByUserId :many
+SELECT * FROM desk WHERE user_id = $1;
 
 -- Card-related queries
 -- name: CreateCard :exec

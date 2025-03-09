@@ -54,6 +54,18 @@ CREATE TABLE verification_codes (
     expires_at TIMESTAMP DEFAULT NOW() + INTERVAL '1 day'
 );
 
+CREATE VIEW user_desk_card_count AS
+    SELECT 
+    u.id AS user_id,
+    u.name AS user_name,
+    COUNT(DISTINCT d.id) AS desk_count,
+    COUNT(DISTINCT c.id) AS card_count
+    FROM users u
+    LEFT JOIN desk d ON u.id = d.user_id
+    LEFT JOIN card c ON d.id = c.desk_id
+GROUP BY u.id;
+
+
 CREATE INDEX idx_users_email ON users (email);
 CREATE INDEX idx_verification_codes_user_id ON verification_codes (user_id);
 CREATE INDEX idx_verification_codes_code ON verification_codes (code);

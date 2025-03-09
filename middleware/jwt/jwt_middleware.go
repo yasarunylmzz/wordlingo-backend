@@ -1,9 +1,7 @@
 package jwt_middleware
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
@@ -15,42 +13,32 @@ import (
 func RefreshAccessTokenMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 	return func(c echo.Context) error {
-		authHeader := c.Request().Header.Get("Authorization")
-		if authHeader == ""{
+		authHeaderRefresh := c.Request().Header.Get("Authorization")
+		if authHeaderRefresh == ""{
 			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Authorization header is required"})
 		}
 		
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		if tokenString == authHeader { 
+		tokenString := strings.TrimPrefix(authHeaderRefresh, "Bearer ")
+		if tokenString == authHeaderRefresh { 
 			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid authorization header"})
 		}
 
-		//verify refresh token
 		_, err := jwt_services.VerifyRefreshToken(tokenString)
 		if err != nil {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"message": "Invalid or expired refresh token"})
 		}
 
-		// **Request body’yi oku ve sakla**
-		bodyBytes, err := io.ReadAll(c.Request().Body)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to read request body"})
-		}
-		// **Request body’yi tekrar kullanılabilir yap**
-		c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-		
-		var request struct {
-			AccessToken string `json:"access_token"`
+		authHeaderAccess := c.Request().Header.Get("X-Access-Token")
+		if authHeaderAccess == ""{
+			return c.JSON(http.StatusBadRequest, map[string]string{"message": "x-access-token header is required"})
 		}
 
-		if err := c.Bind(&request); err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid request payload"})
+		tokenString2 := strings.TrimPrefix(authHeaderAccess, "Bearer ")
+		if tokenString2 == authHeaderAccess { 
+			return c.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid authorization header"})
 		}
 
-		c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-
-		//verify access token
-		_, err = jwt_services.VerifyAccessToken(request.AccessToken)
+		_, err = jwt_services.VerifyAccessToken(tokenString2)
 		fmt.Print(err)
 		if err != nil {
 			newAccessToken, err := jwt_services.CreateAccessToken("username", "name", "email", "surname", 1)

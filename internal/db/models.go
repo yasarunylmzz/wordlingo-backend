@@ -52,6 +52,13 @@ type User struct {
 	IsVerified sql.NullBool
 }
 
+type UserDeskCardCount struct {
+	UserID    int32
+	UserName  string
+	DeskCount int64
+	CardCount int64
+}
+
 type VerificationCode struct {
 	ID        int32
 	UserID    sql.NullInt32

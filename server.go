@@ -24,5 +24,6 @@ func main() {
 	routes.CreateDesk(e)
 	routes.UpdateDesk(e)
 	routes.DeleteDesk(e)
+	routes.GetAllDesk(e)
 	e.Logger.Fatal(e.Start(":1323"))
 }

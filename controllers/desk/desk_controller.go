@@ -5,12 +5,16 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/yasarunylmzz/wordlingo-backend/helpers"
 	"github.com/yasarunylmzz/wordlingo-backend/internal/db"
 )
 
+type DeskRequest struct {
+	UserID int32 `json:"user_id"`
+}
 
 
 func CreateDesk(c echo.Context) error {
@@ -36,7 +40,7 @@ func CreateDesk(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message":"error while creating desk"})
 	}
 
-	dbConn.Close()
+	defer dbConn.Close()
 
 	return c.JSON(http.StatusAccepted, map[string]string{"message":"ok","title":params.Title,"description":params.Description,"image_url":  func() string {
         if params.ImageLink.Valid {
@@ -64,7 +68,7 @@ func UpdateDesk(c echo.Context) error {
 		return c.JSON(http.StatusNotAcceptable, map[string]string{"message":err.Error(),"message2":"erroorrr"})
 	}
 
-	dbConn.Close()
+	defer dbConn.Close()
 
 	return c.JSON(http.StatusOK, map[string]string{"message":"ok"})
 }
@@ -90,8 +94,35 @@ func DeleteDesk(c echo.Context) error {
 		})
 	}
 
-	dbConn.Close()
+	defer dbConn.Close()
 
 	return c.JSON(http.StatusOK, map[string]string{"message":"ok"})
+}
 
+
+func GetAllDesk(c echo.Context) error {
+    // URL'den gelen query parametrelerini almak
+    userID := c.QueryParam("user_id")  // user_id'yi query parametre olarak alıyoruz.
+
+    if userID == "" {
+        return c.JSON(http.StatusBadRequest, map[string]string{"message": "User ID is required"})
+    }
+
+    ctx := context.Background()
+    queries, dbConn, err := helpers.OpenDatabaseConnection()
+
+    if err != nil {
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
+    }
+
+	userIDstr, err := strconv.Atoi(userID)
+    desks, err := queries.GetAllDesksByUserId(ctx, int32(userIDstr))
+
+    defer dbConn.Close()
+
+    if err != nil {
+        return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": err.Error()})
+    }
+
+    return c.JSON(http.StatusOK, map[string]interface{}{"data": desks})
 }
