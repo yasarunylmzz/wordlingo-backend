@@ -15,7 +15,7 @@ type Card struct {
 	Language2       string
 	Description     string
 	DeskID          int32
-	ImportanceValue sql.NullInt32
+	ImportanceValue int32
 }
 
 type Desk struct {

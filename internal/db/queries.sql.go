@@ -18,7 +18,7 @@ type CreateCardParams struct {
 	Language1       string
 	Language2       string
 	Description     string
-	ImportanceValue sql.NullInt32
+	ImportanceValue int32
 	DeskID          int32
 }
 

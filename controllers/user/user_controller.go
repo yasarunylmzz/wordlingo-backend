@@ -142,6 +142,8 @@ func LoginUser(c echo.Context) error {
 	}
 	defer dbConn.Close()
 
+	c.Response().Header().Set("access_token", accessToken)
+	c.Response().Header().Set("refresh_token", refreshToken)
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"message": "User logged in successfully",
 		"user": map[string]interface{}{
@@ -152,8 +154,6 @@ func LoginUser(c echo.Context) error {
 			"is_verified": user.IsVerified.Bool,
 			
 		},
-		"access_token": accessToken,
-		"refresh_token":refreshToken,
 	})
 }
 
