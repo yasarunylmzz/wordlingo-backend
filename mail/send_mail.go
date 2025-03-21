@@ -4,20 +4,39 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"net/smtp"
 	"os"
 	"time"
 
+	"github.com/go-mail/mail/v2"
 	"github.com/joho/godotenv"
 )
-func SendMail(toEmail string, verificationCode string) error {
-	smtpHost := "mail.privateemail.com"
-	smtpPort := "587"
 
+
+var dialer *mail.Dialer
+
+func InitMailer() {
 	godotenv.Load()
-	auth := smtp.PlainAuth("", os.Getenv("SMTP_USERNAME"), os.Getenv("SMTP_PASSWORD"), smtpHost)
 
-	htmlContent := `
+	dialer = mail.NewDialer(
+		"mail.privateemail.com", // SMTP Host
+		587,                     // SMTP Port
+		os.Getenv("SMTP_USERNAME"),
+		os.Getenv("SMTP_PASSWORD"),
+	)
+	dialer.StartTLSPolicy = mail.MandatoryStartTLS
+}
+
+
+func SendMail(toEmail, verificationCode string) error {
+	if dialer == nil {
+		InitMailer()
+	}
+
+  m := mail.NewMessage()
+	m.SetHeader("From", "info@wordlingo.me")
+	m.SetHeader("To", toEmail)
+	m.SetHeader("Subject", "Verification Code")
+	m.SetBody("text/html", fmt.Sprintf(`
 	<!DOCTYPE html>
 <html>
   <head>
@@ -132,17 +151,10 @@ func SendMail(toEmail string, verificationCode string) error {
     </div>
   </body>
 </html>
-`
+`, verificationCode))
 
-	msg := []byte("To: " + toEmail + "\r\n" +
-  "MIME-Version: 1.0\r\n" + 
-		"Subject: Verification Code\r\n" +
-		"Content-Type: text/html; charset=UTF-8\r\n" +
-		"\r\n" +
-		htmlContent + "\r\n")
 
-	// E-posta gönderme
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, "info@wordlingo.me", []string{toEmail}, msg)
+err := dialer.DialAndSend(m)
 	if err != nil {
 		log.Printf("Failed to send email: %v", err)
 		return err
