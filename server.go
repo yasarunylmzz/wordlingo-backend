@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/yasarunylmzz/wordlingo-backend/routes"
@@ -29,5 +31,11 @@ func main() {
 	routes.DeleteCard(e)
 	routes.UpdateCard(e)
 	routes.GetAllCardByDeskId(e)
-	e.Logger.Fatal(e.Start(":1323"))
+
+	httpPort := os.Getenv("PORT")
+    if httpPort == "" {
+        httpPort = "8080"
+    }
+
+	e.Logger.Fatal(e.Start(":"+httpPort))
 }

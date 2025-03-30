@@ -10,7 +10,7 @@ import (
 
 
 func OpenDatabaseConnection() (*db.Queries,*sql.DB, error) {
-	connStr := "postgres://postgres:abc123@localhost:5432/flashcards?sslmode=disable"
+	connStr := "postgres://postgres:abc123@db:5432/flashcards?sslmode=disable"
 	dbConn, err := sql.Open("postgres", connStr)
     
 	if err != nil {

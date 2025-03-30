@@ -1,7 +1,0 @@
-{
-  "db_name": "flashcards",
-  "db_user": "postgres",
-  "db_password": "abc123",
-  "db_host": "localhost",
-  "db_port": 5432
-}
