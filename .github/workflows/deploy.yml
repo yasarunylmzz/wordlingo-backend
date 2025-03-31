@@ -33,7 +33,7 @@ jobs:
         run: |
           if [ -z "${{ secrets.SSH_KEY }}" ]; then echo "SSH_KEY is not set!" >&2; exit 1; fi
           if [ -z "${{ secrets.SERVER_IP }}" ]; then echo "SERVER_IP is not set!" >&2; exit 1; fi
-          if [ -z "${{ secrets.GH_TOKEN }}" ]; then echo "GH_TOKEN is not set!" >&2; exit 1; fi
+          if [ -z "${{ secrets.GITHUB_TOKEN }}" ]; then echo "GITHUB_TOKEN is not set!" >&2; exit 1; fi
           if [ -z "${{ secrets.DOT_ENV }}" ]; then echo "DOT_ENV is not set!" >&2; exit 1; fi
 
       - name: Set up Docker Buildx
@@ -44,7 +44,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GH_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -83,7 +83,7 @@ jobs:
             cd /home/ubuntu/wordlingo-backend/wordlingo-backend || exit 1
 
             # GHCR'ye giriş yap
-            echo "${{ secrets.GH_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             # Eski container'ları ve image'ları temizle
             docker-compose down
