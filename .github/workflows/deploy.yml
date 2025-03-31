@@ -1,9 +1,9 @@
-name: Deploy to DigitalOcean
+name: Deploy to Test Environment
 
 on:
   push:
     branches:
-      - main
+      - test
 
 permissions:
   contents: read
@@ -14,27 +14,26 @@ jobs:
   build:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
-    environment: production
+    environment: test
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Validate secrets
+      - name: Validate Secrets
         run: |
-          if [ -z "${{ secrets.DOT_ENV }}" ]; then echo "DOT_ENV is not set!" >&2; exit 1; fi
+          if [ -z "${{ secrets.DOT_ENV_TEST }}" ]; then echo "DOT_ENV_TEST is not set!" >&2; exit 1; fi
+          if [ -z "${{ secrets.SSH_KEY }}" ]; then echo "SSH_KEY is not set!" >&2; exit 1; fi
+          if [ -z "${{ secrets.SSH_IP }}" ]; then echo "SSH_IP is not set!" >&2; exit 1; fi
+          if [ -z "${{ secrets.SSH_USER }}" ]; then echo "SSH_USER is not set!" >&2; exit 1; fi
 
-      - name: Include .env file
+      - name: Create .env.test file
         run: |
           umask 077
-          echo "${{ secrets.DOT_ENV }}" > .env
-
-      - name: Validate secrets
-        run: |
-          if [ -z "${{ secrets.SSH_KEY }}" ]; then echo "SSH_KEY is not set!" >&2; exit 1; fi
-          if [ -z "${{ secrets.SERVER_IP }}" ]; then echo "SERVER_IP is not set!" >&2; exit 1; fi
-          if [ -z "${{ secrets.GITHUB_TOKEN }}" ]; then echo "GITHUB_TOKEN is not set!" >&2; exit 1; fi
-          if [ -z "${{ secrets.DOT_ENV }}" ]; then echo "DOT_ENV is not set!" >&2; exit 1; fi
+          echo "${{ secrets.DOT_ENV_TEST }}" > .env.test
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -46,54 +45,100 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile.prod
           push: true
-          tags: ghcr.io/yasarunylmzz/wordlingo-backend:latest
+          tags: |
+            ghcr.io/${{ github.repository }}:test
+            ghcr.io/${{ github.repository }}:test-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=test
 
   deploy:
-    name: Deploy to DigitalOcean
+    name: Deploy to Test Environment
     needs: build
     runs-on: ubuntu-latest
-    environment: production
+    environment: test
 
     steps:
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-
-      - name: Deploy to DigitalOcean
-        uses: appleboy/ssh-action@v1.0.0
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ubuntu
-          key: ${{ secrets.SSH_KEY }}
-          script_stop: true
-          script: |
-            set -euo pipefail
+          fetch-depth: 0
+          persist-credentials: false
 
-            # Doğru dizine git
-            cd /home/ubuntu/wordlingo-backend/wordlingo-backend || exit 1
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
 
-            # GHCR'ye giriş yap
+      - name: Create deployment directory
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_IP: ${{ secrets.SSH_IP }}
+        run: |
+          ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "mkdir -p ~/qoo-quote-test"
+
+      - name: Copy Docker Compose file
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_IP: ${{ secrets.SSH_IP }}
+        run: |
+          scp compose.test.yml $SSH_USER@$SSH_IP:~/qoo-quote-test/docker-compose.yml
+
+      - name: Deploy to Test Server
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_IP: ${{ secrets.SSH_IP }}
+        run: |
+          ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP << 'EOF'
+            set -e
+
+            echo ">>> Navigating to test project directory"
+            cd ~/qoo-quote-test || exit 1
+
+            echo ">>> Creating .env.test file"
+            echo "${{ secrets.DOT_ENV_TEST }}" > .env.test
+
+            echo ">>> Logging into GitHub Container Registry"
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Eski container'ları ve image'ları temizle
-            docker-compose down
+            echo ">>> Pulling the latest test Docker image"
+            docker compose pull
+
+            echo ">>> Stopping existing test containers"
+            docker compose down
+
+            echo ">>> Cleaning up Docker system"
             docker system prune -af
 
-            # GHCR'den en güncel image'ı çek
-            docker-compose pull
+            echo ">>> Starting test containers with the latest image"
+            docker compose up -d
 
-            # Container'ları yeniden başlat
-            docker-compose up -d
+            echo ">>> Checking container status"
+            docker compose ps
 
-            # Çalışan container'ları kontrol et
-            docker-compose ps
+            echo ">>> Showing recent logs"
+            docker compose logs --tail=50
+
+            echo ">>> Running database migrations"
+            docker compose exec api npm run migration:run
+
+            echo ">>> Running tests"
+            docker compose exec api npm run test
+          EOF
+
+      - name: Notify on Success
+        if: success()
+        run: |
+          echo "Deployment to test environment completed successfully!"
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "Deployment to test environment failed!"
