@@ -13,6 +13,8 @@ COPY . .
 # Uygulamayı derle
 RUN CGO_ENABLED=0 GOOS=linux go build -o server ./server.go
 
+COPY .env .env
+
 # Runtime aşaması
 FROM alpine:3.18.0
 
