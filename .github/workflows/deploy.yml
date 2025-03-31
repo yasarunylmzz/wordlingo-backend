@@ -17,20 +17,24 @@ jobs:
     environment: production
 
     steps:
-      - name: Include .env file
-        run: |
-          echo "${{ secrets.DOT_ENV }}" > .env
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
+
+      - name: Validate secrets
+        run: |
+          if [ -z "${{ secrets.DOT_ENV }}" ]; then echo "DOT_ENV is not set!" >&2; exit 1; fi
+
+      - name: Include .env file
+        run: |
+          umask 077
+          echo "${{ secrets.DOT_ENV }}" > .env
 
       - name: Validate secrets
         run: |
           if [ -z "${{ secrets.SSH_KEY }}" ]; then echo "SSH_KEY is not set!" >&2; exit 1; fi
           if [ -z "${{ secrets.SERVER_IP }}" ]; then echo "SERVER_IP is not set!" >&2; exit 1; fi
           if [ -z "${{ secrets.GH_TOKEN }}" ]; then echo "GH_TOKEN is not set!" >&2; exit 1; fi
+          if [ -z "${{ secrets.DOT_ENV }}" ]; then echo "DOT_ENV is not set!" >&2; exit 1; fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
