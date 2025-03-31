@@ -17,6 +17,9 @@ jobs:
     environment: production
 
     steps:
+      - name: Include .env file
+        run: |
+          echo "${{ secrets.DOT_ENV }}" > .env
       - name: Checkout code
         uses: actions/checkout@v4
         with:
