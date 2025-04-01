@@ -72,12 +72,12 @@ jobs:
           persist-credentials: false
 
       - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
         run: |
           eval $(ssh-agent -s)
           echo "${{ secrets.SSH_KEY }}" | ssh-add -
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
 
       - name: Test SSH Connection
         run: |
