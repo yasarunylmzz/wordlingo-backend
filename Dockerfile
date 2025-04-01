@@ -22,14 +22,18 @@ RUN apk --no-cache add make bash postgresql-client ca-certificates jq
 
 WORKDIR /app
 
+# Ortam değişkenini al (production/development)
+ARG ENVIRONMENT=development
+ENV GO_ENV=${ENVIRONMENT}
+
+# Ortam değişkenine göre .env dosyasını yükle
+COPY .env.${GO_ENV} .env
+
 # Builder'dan sadece gerekli dosyaları kopyala
 COPY --from=builder /app/server .
-# COPY --from=builder /app/.env .
 COPY --from=builder /app/wait-for-it.sh .
 COPY --from=builder /app/Makefile .
 COPY --from=builder /app/db ./db
-COPY --from=builder /app/.env ./.env
-
 
 # Gerekli izinleri ayarla
 RUN chmod +x wait-for-it.sh

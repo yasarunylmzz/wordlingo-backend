@@ -58,7 +58,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            NODE_ENV=test
+            NODE_ENV=main
 
   deploy:
     name: Deploy to Test Environment
