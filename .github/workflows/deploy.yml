@@ -67,20 +67,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
 
-      - name: Setup SSH Agent
+      - name: Setup SSH Agent and Key
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
 
+      - name: Add Server to Known Hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_IP }} >> ~/.ssh/known_hosts
+
       - name: Test SSH Connection
         run: |
-          eval $(ssh-agent -s)
-          ssh-add -l
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} "echo 'Connection successful'"
+
       - name: Create deployment directory
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
