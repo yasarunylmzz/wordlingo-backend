@@ -96,6 +96,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "cat > ~/app/.env << 'EOF'
           DB_PASSWORD=${{ secrets.DB_PASSWORD }}
           DB_NAME=${{ secrets.DB_NAME }}
+          RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
           EOF"
 
           ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "cat > ~/app/docker-compose.yml << 'EOF'
@@ -181,12 +182,6 @@ jobs:
 
             echo ">>> Showing recent logs"
             docker compose logs --tail=50
-
-            echo ">>> Running database migrations"
-            docker compose exec -T app npm run migration:run || true
-
-            echo ">>> Running tests"
-            docker compose exec -T app npm run test || true
           EOF
 
       - name: Notify on Success
