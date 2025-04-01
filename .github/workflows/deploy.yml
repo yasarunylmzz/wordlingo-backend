@@ -73,6 +73,10 @@ jobs:
           persist-credentials: false
 
       - name: Setup SSH Agent
+        run: |
+          eval $(ssh-agent -s)
+          echo "${{ secrets.SSH_KEY }}" | tr -d '\r' | ssh-add -
+          ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "echo 'Bağlantı başarılı'"
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
