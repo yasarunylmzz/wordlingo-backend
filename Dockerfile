@@ -24,7 +24,7 @@ WORKDIR /app
 
 # Builder'dan sadece gerekli dosyaları kopyala
 COPY --from=builder /app/server .
-COPY --from=builder /app/.env .
+# COPY --from=builder /app/.env .
 COPY --from=builder /app/wait-for-it.sh .
 COPY --from=builder /app/Makefile .
 COPY --from=builder /app/db ./db
