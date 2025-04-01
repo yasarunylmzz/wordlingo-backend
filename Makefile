@@ -1,5 +1,8 @@
-# .env dosyasındaki çevresel değişkenleri yükle
--include .env
+# Varsayılan ortam değeri (development veya production gibi)
+GO_ENV ?= development
+
+# .env dosyasındaki çevresel değişkenleri yükle (.env.development veya .env.production)
+-include .env.$(GO_ENV)
 export
 
 # Veritabanı bilgilerini .env dosyasından al

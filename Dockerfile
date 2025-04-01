@@ -27,7 +27,7 @@ ARG ENVIRONMENT=production
 ENV GO_ENV=${ENVIRONMENT}
 
 # Ortam değişkenine göre .env dosyasını yükle
-COPY .env.${GO_ENV} .env
+COPY .env.${GO_ENV} .env.production
 
 # Builder'dan sadece gerekli dosyaları kopyala
 COPY --from=builder /app/server .
