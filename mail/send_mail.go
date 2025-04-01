@@ -7,36 +7,25 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-mail/mail/v2"
 	"github.com/joho/godotenv"
+	"github.com/resend/resend-go/v2"
 )
 
-
-var dialer *mail.Dialer
+var client *resend.Client
 
 func InitMailer() {
 	godotenv.Load()
 
-	dialer = mail.NewDialer(
-		"mail.privateemail.com", // SMTP Host
-		587,                     // SMTP Port
-		os.Getenv("SMTP_USERNAME"),
-		os.Getenv("SMTP_PASSWORD"),
-	)
-	dialer.StartTLSPolicy = mail.MandatoryStartTLS
+	apiKey := os.Getenv("RESEND_API_KEY")
+	client = resend.NewClient(apiKey)
 }
 
-
 func SendMail(toEmail, verificationCode string) error {
-	if dialer == nil {
+	if client == nil {
 		InitMailer()
 	}
 
-  m := mail.NewMessage()
-	m.SetHeader("From", "info@wordlingo.me")
-	m.SetHeader("To", toEmail)
-	m.SetHeader("Subject", "Verification Code")
-	m.SetBody("text/html", fmt.Sprintf(`
+	htmlContent := fmt.Sprintf(`
 	<!DOCTYPE html>
 <html>
   <head>
@@ -55,7 +44,7 @@ func SendMail(toEmail, verificationCode string) error {
   >
     <div
       style="
-        width: 100%;
+        width: 100%%;
         max-width: 600px;
         margin: 0 auto;
         background-color: #ffffff;
@@ -66,8 +55,7 @@ func SendMail(toEmail, verificationCode string) error {
       <div
         style="
           background-color: #4f42d8;
-          width: 100%;
-
+          width: 100%%;
           color: #ffffff;
           padding: 20px 0;
           text-align: center;
@@ -96,8 +84,7 @@ func SendMail(toEmail, verificationCode string) error {
             margin: 10px 0;
           "
         >
-          ` + verificationCode + `
-          
+          %s
         </div>
         <p
           style="
@@ -113,7 +100,7 @@ func SendMail(toEmail, verificationCode string) error {
           href="https://www.wordlingo.me/verify"
           style="
             display: block;
-            width: 90%;
+            width: 90%%;
             background-color: #232f3e;
             color: #ffffff;
             padding: 15px;
@@ -151,10 +138,16 @@ func SendMail(toEmail, verificationCode string) error {
     </div>
   </body>
 </html>
-`, verificationCode))
+`, verificationCode)
 
+	params := &resend.SendEmailRequest{
+		From:    "info@wordlingo.me",
+		To:      []string{toEmail},
+		Subject: "Verification Code",
+		Html:    htmlContent,
+	}
 
-err := dialer.DialAndSend(m)
+	_, err := client.Emails.Send(params)
 	if err != nil {
 		log.Printf("Failed to send email: %v", err)
 		return err
@@ -163,8 +156,7 @@ err := dialer.DialAndSend(m)
 	return nil
 }
 
-
 func GenerateVerificationCode() string {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return fmt.Sprintf("%06d", r.Intn(1000000)) // 000000 - 999999 arası
+	return fmt.Sprintf("%06d", r.Intn(1000000))
 }
