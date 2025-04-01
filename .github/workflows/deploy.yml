@@ -113,6 +113,7 @@ jobs:
                 - DB_PASSWORD=\${DB_PASSWORD}
                 - DB_NAME=\${DB_NAME}
                 - DB_PORT=5432
+                - RESEND_API_KEY=\${RESEND_API_KEY}
               networks:
                 - app-network
               logging:
