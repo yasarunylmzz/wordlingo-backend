@@ -75,6 +75,9 @@ jobs:
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
+        run: |
+          eval $(ssh-agent -s)
+          echo "${{ secrets.SSH_KEY }}" | ssh-add -
 
       - name: Test SSH Connection
         run: |
