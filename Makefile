@@ -30,8 +30,8 @@ clean: ## Veritabanını siler
 # Veritabanını oluşturma işlemi
 createdb: ## Veritabanını yeniden oluşturur
 	@echo "PostgreSQL veritabanı oluşturuluyor: $(DB_NAME)"
-	psql -U $(DB_USER) -h db -p $(DB_PORT) -tc "SELECT 1 FROM pg_database WHERE datname = '$(DB_NAME)'" | grep -q 1 || \
-	psql -U $(DB_USER) -h db -p $(DB_PORT) -c "CREATE DATABASE $(DB_NAME);"
+	psql -U $(DB_USER) -h $(DB_HOST) -p $(DB_PORT) -tc "SELECT 1 FROM pg_database WHERE datname = '$(DB_NAME)'" | grep -q 1 || \
+	psql -U $(DB_USER) -h $(DB_HOST) -p $(DB_PORT) -c "CREATE DATABASE $(DB_NAME);"
 
 # Şema dosyasını yükleme işlemi
 schema: ## Şema dosyasını uygular
