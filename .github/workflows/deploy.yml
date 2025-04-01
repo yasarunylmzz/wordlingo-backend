@@ -72,9 +72,6 @@ jobs:
           persist-credentials: false
 
       - name: Setup SSH Agent
-        run: |
-          eval $(ssh-agent -s)
-          echo "${{ secrets.SSH_KEY }}" | ssh-add -
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
@@ -83,8 +80,7 @@ jobs:
         run: |
           eval $(ssh-agent -s)
           ssh-add -l
-          ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "echo 'Bağlantı başarılıı'"
-
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} "echo 'Connection successful'"
       - name: Create deployment directory
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
