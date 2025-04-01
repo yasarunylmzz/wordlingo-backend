@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   app:
-    image: ghcr.io/[yasarunylmzz]/[wordlingo-backend]:main
+    image: ghcr.io/yasarunylmzz/wordlingo-backend:main
     build: .
     ports:
       - "8080:8080"
