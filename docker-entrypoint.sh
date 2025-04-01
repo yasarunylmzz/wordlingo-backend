@@ -1,26 +1,25 @@
 #!/bin/bash
 set -e
 
-# Veritabanı hazır olana kadar bekle
+# Load .env file
+source .env
+
+# Wait for the database to be ready
 ./wait-for-it.sh db:5432 --timeout=30 --strict
 
-
-# Veritabanı var mı kontrol et
-if ! PGPASSWORD=abc123 psql -h db -U postgres -d postgres -c '\l' | grep -q "flashcards"; then
-  PGPASSWORD=abc123 make clean
-  echo "Veritabanı bulunamadı, oluşturuluyor..."
-  PGPASSWORD=abc123 make createdb || { echo "Veritabanı oluşturulamadı"; exit 1; }
-else
-  echo "Veritabanı mevcut."
+# Check if the database exists
+if PGPASSWORD=$DB_PASSWORD psql -h db -U postgres -d postgres -c '\l' | grep -q "flashcards"; then
+  echo "Database exists, dropping it..."
+  PGPASSWORD=$DB_PASSWORD psql -h db -U postgres -d postgres -c "DROP DATABASE IF EXISTS flashcards;" || { echo "Failed to drop the database"; exit 1; }
 fi
 
-# Şemalar var mı kontrol et
-if ! PGPASSWORD=abc123 psql -h db -U postgres -d flashcards -c '\dt' | grep -q "users"; then
-  echo "Şemalar yok, uygulama yapılıyor..."
-  PGPASSWORD=abc123 make schema || { echo "Şemalar uygulanamadı"; exit 1; }
-else
-  echo "Şemalar zaten mevcut."
-fi
+# Create a new database
+echo "Creating the new database..."
+PGPASSWORD=$DB_PASSWORD make createdb || { echo "Failed to create the database"; exit 1; }
 
-# Uygulamayı başlat
+# Apply schema
+echo "Applying schema..."
+PGPASSWORD=$DB_PASSWORD make schema || { echo "Failed to apply schema"; exit 1; }
+
+# Start the application
 exec "./server"
