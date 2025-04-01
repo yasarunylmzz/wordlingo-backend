@@ -7,17 +7,17 @@ import (
 	"os"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/resend/resend-go/v2"
 )
 
 var client *resend.Client
 
 func InitMailer() {
-	godotenv.Load()
-
-	apiKey := os.Getenv("RESEND_API_KEY")
-	client = resend.NewClient(apiKey)
+  apiKey := os.Getenv("RESEND_API_KEY")
+  if apiKey == "" {
+      log.Fatal("RESEND_API_KEY environment variable not set")
+  }
+  client = resend.NewClient(apiKey)
 }
 
 func SendMail(toEmail, verificationCode string) error {

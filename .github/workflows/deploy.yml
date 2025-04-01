@@ -147,6 +147,12 @@ jobs:
           networks:
             app-network:
           EOF"
+      - name: Validate Secrets
+        run: |
+          if [ -z "${{ secrets.RESEND_API_KEY }}" ]; then 
+            echo "::error::RESEND_API_KEY secret eksik!"
+            exit 1
+          fi
 
       - name: Deploy to Test Server
         env:
