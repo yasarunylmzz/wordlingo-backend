@@ -28,6 +28,8 @@ COPY --from=builder /app/server .
 COPY --from=builder /app/wait-for-it.sh .
 COPY --from=builder /app/Makefile .
 COPY --from=builder /app/db ./db
+COPY --from=builder /app/.env ./.env
+
 
 # Gerekli izinleri ayarla
 RUN chmod +x wait-for-it.sh
