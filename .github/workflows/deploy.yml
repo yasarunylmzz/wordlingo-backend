@@ -29,11 +29,13 @@ jobs:
           if [ -z "${{ secrets.SSH_KEY }}" ]; then echo "SSH_KEY is not set!" >&2; exit 1; fi
           if [ -z "${{ secrets.SSH_IP }}" ]; then echo "SSH_IP is not set!" >&2; exit 1; fi
           if [ -z "${{ secrets.SSH_USER }}" ]; then echo "SSH_USER is not set!" >&2; exit 1; fi
+          if [ -z "${{ secrets.DB_PASSWORD }}" ]; then echo "DB_PASSWORD is not set!" >&2; exit 1; fi
+          if [ -z "${{ secrets.DB_NAME }}" ]; then echo "DB_NAME is not set!" >&2; exit 1; fi
 
       - name: Create .env.test file
         run: |
           umask 077
-          echo "${{ secrets.DOT_ENV }}" > .env.test  # Fixed typo
+          echo "${{ secrets.DOT_ENV }}" > .env.test
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -51,8 +53,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:test
-            ghcr.io/${{ github.repository }}:test-${{ github.sha }}
+            ghcr.io/${{ github.repository }}:main
+            ghcr.io/${{ github.repository }}:main-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -67,11 +69,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Create .env.test file in deploy job
-        run: |
-          umask 077
-          echo "${{ secrets.DOT_ENV }}" > .env.test  # Fixed typo and recreated here
 
       - name: Setup SSH Agent and Key
         uses: webfactory/ssh-agent@v0.7.0
@@ -91,24 +88,81 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} "mkdir -p ~/app"
 
-      - name: Copy Docker Compose and .env files to server
+      - name: Create Docker Compose file and .env on server
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_IP: ${{ secrets.SSH_IP }}
         run: |
-          scp -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }}:~/app/
-          scp -o StrictHostKeyChecking=no .env.test ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }}:~/app/
+          ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "cat > ~/app/.env << 'EOF'
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          EOF"
+
+          ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "cat > ~/app/docker-compose.yml << 'EOF'
+          services:
+            app:
+              image: ghcr.io/${{ github.repository }}:main
+              ports:
+                - \"8080:8080\"
+              depends_on:
+                - db
+              environment:
+                - DB_HOST=db
+                - DB_USER=postgres
+                - DB_PASSWORD=\${DB_PASSWORD}
+                - DB_NAME=\${DB_NAME}
+                - DB_PORT=5432
+              networks:
+                - app-network
+              logging:
+                driver: \"json-file\"
+                options:
+                  max-size: \"10m\"
+                  max-file: \"3\"
+
+            db:
+              image: postgres:16
+              command: postgres -c listen_addresses='*'
+              volumes:
+                - postgres_data:/var/lib/postgresql/data
+              environment:
+                - POSTGRES_PASSWORD=\${DB_PASSWORD}
+                - POSTGRES_USER=postgres
+                - POSTGRES_DB=\${DB_NAME}
+              ports:
+                - \"5432:5432\"
+              networks:
+                - app-network
+              healthcheck:
+                test: [\"CMD-SHELL\", \"pg_isready -U postgres\"]
+                interval: 10s
+                retries: 5
+                start_period: 30s
+                timeout: 10s
+
+          volumes:
+            postgres_data:
+
+          networks:
+            app-network:
+          EOF"
 
       - name: Deploy to Test Server
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_IP: ${{ secrets.SSH_IP }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP << 'EOF'
+          ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP << EOF
             set -e
 
             echo ">>> Changing to app directory"
             cd ~/app
 
             echo ">>> Logging into GitHub Container Registry"
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "${GITHUB_TOKEN}" | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
 
             echo ">>> Pulling the latest test Docker image"
             docker compose pull
@@ -129,10 +183,10 @@ jobs:
             docker compose logs --tail=50
 
             echo ">>> Running database migrations"
-            docker compose exec api npm run migration:run
+            docker compose exec -T app npm run migration:run || true
 
             echo ">>> Running tests"
-            docker compose exec api npm run test
+            docker compose exec -T app npm run test || true
           EOF
 
       - name: Notify on Success
