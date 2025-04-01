@@ -89,12 +89,12 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "mkdir -p ~/qoo-quote-test"
 
-      - name: Copy Docker Compose file
-        env:
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_IP: ${{ secrets.SSH_IP }}
-        run: |
-          scp compose.test.yml $SSH_USER@$SSH_IP:~/qoo-quote-test/docker-compose.yml
+      # - name: Copy Docker Compose file
+      #   env:
+      #     SSH_USER: ${{ secrets.SSH_USER }}
+      #     SSH_IP: ${{ secrets.SSH_IP }}
+      #   run: |
+      #     scp compose.test.yml $SSH_USER@$SSH_IP:~/qoo-quote-test/docker-compose.yml
 
       - name: Deploy to Test Server
         env:
