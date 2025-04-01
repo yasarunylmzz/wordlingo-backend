@@ -4,8 +4,10 @@ set -e
 # Veritabanı hazır olana kadar bekle
 ./wait-for-it.sh db:5432 --timeout=30 --strict
 
+
 # Veritabanı var mı kontrol et
 if ! PGPASSWORD=abc123 psql -h db -U postgres -d postgres -c '\l' | grep -q "flashcards"; then
+  PGPASSWORD=abc123 make clean
   echo "Veritabanı bulunamadı, oluşturuluyor..."
   PGPASSWORD=abc123 make createdb || { echo "Veritabanı oluşturulamadı"; exit 1; }
 else
