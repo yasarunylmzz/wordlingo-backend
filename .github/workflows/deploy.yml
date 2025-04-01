@@ -82,20 +82,6 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} "echo 'Connection successful'"
 
-      - name: Create deployment directory
-        env:
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_IP: ${{ secrets.SSH_IP }}
-        run: |
-          ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "mkdir -p ~/qoo-quote-test"
-
-      # - name: Copy Docker Compose file
-      #   env:
-      #     SSH_USER: ${{ secrets.SSH_USER }}
-      #     SSH_IP: ${{ secrets.SSH_IP }}
-      #   run: |
-      #     scp compose.test.yml $SSH_USER@$SSH_IP:~/qoo-quote-test/docker-compose.yml
-
       - name: Deploy to Test Server
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
@@ -103,9 +89,6 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP << 'EOF'
             set -e
-
-            echo ">>> Navigating to test project directory"
-            cd ~/qoo-quote-test || exit 1
 
             echo ">>> Logging into GitHub Container Registry"
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
