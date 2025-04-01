@@ -32,10 +32,10 @@ jobs:
           if [ -z "${{ secrets.DB_PASSWORD }}" ]; then echo "DB_PASSWORD is not set!" >&2; exit 1; fi
           if [ -z "${{ secrets.DB_NAME }}" ]; then echo "DB_NAME is not set!" >&2; exit 1; fi
 
-      - name: Create .env.development file
+      - name: Create .env.production file
         run: |
           umask 077
-          echo "${{ secrets.DOT_ENV }}" > .env.development
+          echo "${{ secrets.DOT_ENV }}" > .env.production
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -93,7 +93,7 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_IP: ${{ secrets.SSH_IP }}
         run: |
-          ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "cat > ~/app/.env.development << 'EOF'
+          ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "cat > ~/app/.env.production << 'EOF'
           DB_PASSWORD=${{ secrets.DB_PASSWORD }}
           DB_NAME=${{ secrets.DB_NAME }}
           RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}

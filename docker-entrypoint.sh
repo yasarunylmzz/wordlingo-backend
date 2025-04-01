@@ -3,8 +3,8 @@ set -e
 
 # Ortam değişkenini kontrol et (development ya da production)
 if [ -z "$GO_ENV" ]; then
-  echo "GO_ENV environment variable is not set. Defaulting to 'development'."
-  GO_ENV="development"
+  echo "GO_ENV environment variable is not set. Defaulting to 'production'."
+  GO_ENV="production"
 fi
 
 # Ortama göre .env dosyasını yükle

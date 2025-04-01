@@ -23,7 +23,7 @@ RUN apk --no-cache add make bash postgresql-client ca-certificates jq
 WORKDIR /app
 
 # Ortam değişkenini al (production/development)
-ARG ENVIRONMENT=development
+ARG ENVIRONMENT=production
 ENV GO_ENV=${ENVIRONMENT}
 
 # Ortam değişkenine göre .env dosyasını yükle
