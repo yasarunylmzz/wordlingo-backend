@@ -1,11 +1,17 @@
 // controllers/user_controller.go
 package user_controller
 
+// eğer doğrulama kodu eşleşmiyor ise hata fırlat
+// kullanıcı oluşturulduğunda id değerinide döndür
+// eğer kullanıcı doğrulanmamış ise yinede access ve refresh token döndür
+// refresh ve access tokenleri jsondada döndür mobil tarafta headerdan alınmadığı durumlar oluyor.
+
 import (
 	"context"
 	"database/sql"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
@@ -60,7 +66,7 @@ func CreateUser(c echo.Context) error {
     }
 	defer dbConn.Close()
 
-    return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully"})
+	return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully", "user_id": strconv.Itoa(int(userID))})
 }
 
 
@@ -159,7 +165,7 @@ func LoginUser(c echo.Context) error {
 
 func UserVerification(c echo.Context) error {
 	ctx := context.Background()
-	queries,dbConn, err := helpers.OpenDatabaseConnection()
+	queries, dbConn, err := helpers.OpenDatabaseConnection()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Database connection failed",
@@ -176,7 +182,7 @@ func UserVerification(c echo.Context) error {
 			"error": "User verification failed",
 		})
 	}
-	defer dbConn.Close() // İşin bittiğinde bağlantıyı kapat
+	defer dbConn.Close() 
 
 	return c.JSON(http.StatusAccepted, map[string]string{
 		"message": "User verified successfully",

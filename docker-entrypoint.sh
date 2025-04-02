@@ -15,18 +15,16 @@ source .env.${GO_ENV}
 ./wait-for-it.sh db:5432 --timeout=30 --strict
 
 # Veritabanının mevcut olup olmadığını kontrol et
-if PGPASSWORD=$DB_PASSWORD psql -h db -U postgres -d postgres -c '\l' | grep -q "$DB_NAME"; then
-  echo "Database exists, dropping it..."
-  PGPASSWORD=$DB_PASSWORD psql -h db -U postgres -d postgres -c "DROP DATABASE IF EXISTS $DB_NAME;" || { echo "Failed to drop the database"; exit 1; }
+if ! PGPASSWORD=$DB_PASSWORD psql -h db -U postgres -d postgres -c '\l' | grep -q "$DB_NAME"; then
+  echo "Database does not exist, creating it..."
+  PGPASSWORD=$DB_PASSWORD make createdb || { echo "Failed to create the database"; exit 1; }
+  
+  # Şemayı uygula
+  echo "Applying schema..."
+  PGPASSWORD=$DB_PASSWORD make schema || { echo "Failed to apply schema"; exit 1; }
+else
+  echo "Database already exists, skipping creation..."
 fi
-
-# Yeni veritabanını oluştur
-echo "Creating the new database..."
-PGPASSWORD=$DB_PASSWORD make createdb || { echo "Failed to create the database"; exit 1; }
-
-# Şemayı uygula
-echo "Applying schema..."
-PGPASSWORD=$DB_PASSWORD make schema || { echo "Failed to apply schema"; exit 1; }
 
 # Uygulamayı başlat
 echo "Starting the application..."
