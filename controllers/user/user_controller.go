@@ -175,6 +175,13 @@ func UserVerification(c echo.Context) error {
 	code, err := queries.GetVerificationCodeById(ctx, sql.NullInt32{Int32: params.ID, Valid: true})
 
 
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Error retrieving verification code",
+			"message": err.Error(),
+		})
+	}
+	
 	if code.Code != params.Code {
 		return c.JSON(http.StatusNotAcceptable, map[string]string{
 			"error":"code expired or not allowed",
