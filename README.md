@@ -93,7 +93,7 @@ Displays a list of available `make` commands.
 | Method | Endpoint             | Description                                        |
 | ------ | -------------------- | -------------------------------------------------- |
 | POST   | `/createuser`        | Create a new user                                  |
-| GET    | `/loginuser`         | Login User endpoint                                |
+| POST   | `/loginuser`         | Login User endpoint                                |
 | POST   | `/verificiationuser` | Verification Code with six-digit verification code |
 
 ## License
