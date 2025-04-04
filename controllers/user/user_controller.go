@@ -197,6 +197,5 @@ func UserVerification(c echo.Context) error {
 
 	return c.JSON(http.StatusAccepted, map[string]string{
 		"message": "User verified successfully",
-		"error":err.Error(),
 	})
 }
