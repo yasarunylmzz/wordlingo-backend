@@ -181,7 +181,6 @@ func UserVerification(c echo.Context) error {
 			"message": err.Error(),
 		})
 	}
-	
 	if code.Code != params.Code {
 		return c.JSON(http.StatusNotAcceptable, map[string]string{
 			"error":"code expired or not allowed",
