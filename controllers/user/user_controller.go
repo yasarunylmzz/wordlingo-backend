@@ -1,11 +1,6 @@
 // controllers/user_controller.go
 package user_controller
 
-// eğer doğrulama kodu eşleşmiyor ise hata fırlat
-// kullanıcı oluşturulduğunda id değerinide döndür
-// eğer kullanıcı doğrulanmamış ise yinede access ve refresh token döndür
-// refresh ve access tokenleri jsondada döndür mobil tarafta headerdan alınmadığı durumlar oluyor.
-
 import (
 	"context"
 	"database/sql"
@@ -177,14 +172,26 @@ func UserVerification(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
 	}
 
-	if err := queries.VerifyUser(ctx, params); err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "User verification failed",
+	code, err := queries.GetVerificationCodeById(ctx, sql.NullInt32{Int32: params.ID, Valid: true})
+
+
+	if code.Code != params.Code {
+		return c.JSON(http.StatusNotAcceptable, map[string]string{
+			"error":"code expired or not allowed",
+			"error_message":err.Error(),
 		})
 	}
+
+
+	 if err := queries.VerifyUser(ctx, params); err != nil {
+	 	return c.JSON(http.StatusInternalServerError, map[string]string{
+	 		"error": "User verification failed",
+	 	})
+	 }
 	defer dbConn.Close() 
 
 	return c.JSON(http.StatusAccepted, map[string]string{
 		"message": "User verified successfully",
+		"error":err.Error(),
 	})
 }

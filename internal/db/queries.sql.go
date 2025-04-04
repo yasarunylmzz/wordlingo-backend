@@ -253,6 +253,22 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 	return i, err
 }
 
+const getVerificationCodeById = `-- name: GetVerificationCodeById :one
+SELECT code, expires_at FROM verification_codes WHERE user_id = $1
+`
+
+type GetVerificationCodeByIdRow struct {
+	Code      string
+	ExpiresAt sql.NullTime
+}
+
+func (q *Queries) GetVerificationCodeById(ctx context.Context, userID sql.NullInt32) (GetVerificationCodeByIdRow, error) {
+	row := q.db.QueryRowContext(ctx, getVerificationCodeById, userID)
+	var i GetVerificationCodeByIdRow
+	err := row.Scan(&i.Code, &i.ExpiresAt)
+	return i, err
+}
+
 const isUserVerified = `-- name: IsUserVerified :one
 SELECT is_verified, email FROM users WHERE id = $1
 `

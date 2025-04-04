@@ -79,3 +79,6 @@ WHERE users.id = $1
 SELECT password 
 FROM users 
 WHERE email = $1;
+
+-- name: GetVerificationCodeById :one
+SELECT code, expires_at FROM verification_codes WHERE user_id = $1;

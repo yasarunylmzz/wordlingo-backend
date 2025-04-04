@@ -22,21 +22,7 @@ Before running the project, ensure you have the following installed:
 
 ## Setup
 
-### 1. Configure Database
-
-Update the `config.json` file with your database credentials:
-
-```json
-{
-  "db_name": "flashcards",
-  "db_user": "postgres",
-  "db_password": "abc123",
-  "db_host": "localhost",
-  "db_port": "5432"
-}
-```
-
-### 2. Install Dependencies
+### 1. Install Dependencies
 
 Run the following command to install required Go modules:
 
@@ -44,7 +30,7 @@ Run the following command to install required Go modules:
 go mod tidy
 ```
 
-### 3. Database Initialization
+### 2. Database Initialization
 
 Use the Makefile to create and configure the database.
 
