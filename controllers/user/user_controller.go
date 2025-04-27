@@ -137,6 +137,7 @@ func LoginUser(c echo.Context) error {
 				"email": user.Email,
 				"name":  user.Name,
 				"surname": user.Surname,
+				"username":user.Username,
 				"is_verified": user.IsVerified.Bool,
 			},
 		})
@@ -152,6 +153,7 @@ func LoginUser(c echo.Context) error {
 			"email": user.Email,
 			"name":  user.Name,
 			"surname": user.Surname,
+			"username":user.Username,
 			"is_verified": user.IsVerified.Bool,
 			
 		},
