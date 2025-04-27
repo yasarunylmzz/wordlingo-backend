@@ -1,5 +1,5 @@
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
     surname TEXT NOT NULL,
     username TEXT NOT NULL UNIQUE,
@@ -9,7 +9,7 @@ CREATE TABLE users (
 );
 
 CREATE TABLE desk (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id INTEGER NOT NULL,
     image_link TEXT,
     title TEXT NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE desk (
 );
 
 CREATE TABLE card (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     language_1 TEXT NOT NULL,
     language_2 TEXT NOT NULL,
     description TEXT NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE card (
 ); 
 
 CREATE TABLE todo (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id INTEGER NOT NULL,
     todo TEXT NOT NULL,
     is_true BOOLEAN DEFAULT FALSE,
@@ -37,7 +37,7 @@ CREATE TABLE todo (
 );
 
 CREATE TABLE progress (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id INTEGER NOT NULL,
     card_id INTEGER NOT NULL,
     progress_level INTEGER NOT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE progress (
 );
 
 CREATE TABLE verification_codes (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id INTEGER REFERENCES users(id),
     code VARCHAR(6) NOT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
