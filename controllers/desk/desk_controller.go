@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/yasarunylmzz/wordlingo-backend/helpers"
 	"github.com/yasarunylmzz/wordlingo-backend/internal/db"
@@ -115,8 +115,8 @@ func GetAllDesk(c echo.Context) error {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
     }
 
-	userIDstr, err := strconv.Atoi(userID)
-    desks, err := queries.GetAllDesksByUserId(ctx, int32(userIDstr))
+	userIDParsed, err := uuid.Parse(userID)
+    desks, err := queries.GetAllDesksByUserId(ctx, userIDParsed)
 
     defer dbConn.Close()
 

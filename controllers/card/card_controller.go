@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/yasarunylmzz/wordlingo-backend/helpers"
 	"github.com/yasarunylmzz/wordlingo-backend/internal/db"
@@ -131,9 +131,8 @@ func GetAllCardByDeskId(c echo.Context) error {
 		})
 	}
 
-	deskIDstr, err := strconv.Atoi(deskID)
-
-	data, err := queries.GetCardsByDeskId(ctx, int32(deskIDstr))
+	parseDeskId, err := uuid.Parse(deskID)
+	data, err := queries.GetCardsByDeskId(ctx, parseDeskId)
 
 	
 	if err != nil {

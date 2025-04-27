@@ -41,7 +41,7 @@ func RefreshAccessTokenMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		_, err = jwt_services.VerifyAccessToken(tokenString2)
 		fmt.Print(err)
 		if err != nil {
-			newAccessToken, err := jwt_services.CreateAccessToken("username", "name", "email", "surname", 1)
+			newAccessToken, err := jwt_services.CreateAccessToken("username", "name", "email", "surname", fmt.Sprintf("%d", 1))
 			if err != nil{
 				return c.JSON(http.StatusNotAcceptable, map[string]string{"message":err.Error()})
 			}

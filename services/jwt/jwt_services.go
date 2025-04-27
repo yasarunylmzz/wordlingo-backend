@@ -12,7 +12,7 @@ import (
 var secretKey = []byte(os.Getenv("JWT_SECRET"))
 
 // createAccessToken creates an access token (short-lived).
-func CreateAccessToken(username,name, email, surname string, id int) (string, error) {
+func CreateAccessToken(username,name, email, surname string, id string) (string, error) {
     token := jwt.NewWithClaims(jwt.SigningMethodHS256,
         jwt.MapClaims{
             "username": username,
@@ -32,7 +32,7 @@ func CreateAccessToken(username,name, email, surname string, id int) (string, er
 }
 
 // createRefreshToken creates a refresh token (long-lived).
-func CreateRefreshToken(username,name, email, surname string, id int) (string, error) {
+func CreateRefreshToken(username,name, email, surname string, id string) (string, error) {
     token := jwt.NewWithClaims(jwt.SigningMethodHS256,
         jwt.MapClaims{
             "username": username,

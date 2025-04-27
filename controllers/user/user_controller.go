@@ -6,8 +6,8 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
 	"github.com/yasarunylmzz/wordlingo-backend/helpers"
@@ -46,7 +46,10 @@ func CreateUser(c echo.Context) error {
 
     verificationCode := mail.GenerateVerificationCode()
     verificationParams := db.VerificationCodeCreateParams{
-        UserID: sql.NullInt32{Int32: userID, Valid: true},
+        UserID: uuid.NullUUID{
+		 UUID: userID,
+		 Valid: true,
+		},
         Code:   verificationCode,
     }
 
@@ -61,7 +64,7 @@ func CreateUser(c echo.Context) error {
     }
 	defer dbConn.Close()
 
-	return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully", "user_id": strconv.Itoa(int(userID))})
+	return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully", "user_id": userID.String()})
 }
 
 
@@ -115,13 +118,13 @@ func LoginUser(c echo.Context) error {
 			"details": "Database error occurred",
 		})
 	}
-	accessToken, err := jwt_services.CreateAccessToken(user.Username, user.Name, user.Email, user.Surname, int(user.ID))
+	accessToken, err := jwt_services.CreateAccessToken(user.Username, user.Name, user.Email, user.Surname, user.ID.String())
 	if err != nil {
 		 log.Printf("Failed to create access token: %v", err)
 		 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create access token"})
 	 }
  
-	 refreshToken, err := jwt_services.CreateRefreshToken(user.Username, user.Name, user.Email, user.Surname, int(user.ID))
+	 refreshToken, err := jwt_services.CreateRefreshToken(user.Username, user.Name, user.Email, user.Surname, user.ID.String())
 	 if err != nil {
 		 log.Printf("Failed to create refresh token: %v", err)
 		 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create refresh token"})
@@ -174,7 +177,10 @@ func UserVerification(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
 	}
 
-	code, err := queries.GetVerificationCodeById(ctx, sql.NullInt32{Int32: params.ID, Valid: true})
+	code, err := queries.GetVerificationCodeById(ctx, uuid.NullUUID{
+		UUID: params.ID,
+		Valid: true,
+	})
 
 
 	if err != nil {
