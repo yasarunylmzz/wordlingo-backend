@@ -12,7 +12,7 @@ CREATE TABLE users (
 
 CREATE TABLE desk (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id INTEGER NOT NULL,
+    user_id UUID NOT NULL,
     image_link TEXT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE card (
 
 CREATE TABLE todo (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id INTEGER NOT NULL,
+    user_id UUID NOT NULL,
     todo TEXT NOT NULL,
     is_true BOOLEAN DEFAULT FALSE,
     description TEXT NOT NULL,
@@ -40,8 +40,8 @@ CREATE TABLE todo (
 
 CREATE TABLE progress (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id INTEGER NOT NULL,
-    card_id INTEGER NOT NULL,
+    user_id UUID NOT NULL,
+    card_id UUID NOT NULL,
     progress_level INTEGER NOT NULL,
     date DATE NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -50,7 +50,7 @@ CREATE TABLE progress (
 
 CREATE TABLE verification_codes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id INTEGER REFERENCES users(id),
+    user_id UUID REFERENCES users(id),
     code VARCHAR(6) NOT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
     expires_at TIMESTAMP DEFAULT NOW() + INTERVAL '1 day'
