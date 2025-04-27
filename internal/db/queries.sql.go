@@ -8,6 +8,8 @@ package db
 import (
 	"context"
 	"database/sql"
+
+	"github.com/google/uuid"
 )
 
 const createCard = `-- name: CreateCard :exec
@@ -19,7 +21,7 @@ type CreateCardParams struct {
 	Language2       string
 	Description     string
 	ImportanceValue int32
-	DeskID          int32
+	DeskID          uuid.UUID
 }
 
 // Card-related queries
@@ -42,7 +44,7 @@ type CreateDeskParams struct {
 	Title       string
 	Description string
 	ImageLink   sql.NullString
-	UserID      int32
+	UserID      uuid.UUID
 }
 
 // Desk-related queries
@@ -70,7 +72,7 @@ type CreateUserParams struct {
 	Password string
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int32, error) {
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (uuid.UUID, error) {
 	row := q.db.QueryRowContext(ctx, createUser,
 		arg.Name,
 		arg.Surname,
@@ -78,7 +80,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int32, 
 		arg.Email,
 		arg.Password,
 	)
-	var id int32
+	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
 }
@@ -88,8 +90,8 @@ DELETE FROM card WHERE id = $1 AND desk_id = $2
 `
 
 type DeleteCardParams struct {
-	ID     int32
-	DeskID int32
+	ID     uuid.UUID
+	DeskID uuid.UUID
 }
 
 func (q *Queries) DeleteCard(ctx context.Context, arg DeleteCardParams) error {
@@ -102,8 +104,8 @@ DELETE FROM desk WHERE id = $1 AND user_id=$2
 `
 
 type DeleteDeskParams struct {
-	ID     int32
-	UserID int32
+	ID     uuid.UUID
+	UserID uuid.UUID
 }
 
 func (q *Queries) DeleteDesk(ctx context.Context, arg DeleteDeskParams) error {
@@ -115,7 +117,7 @@ const getAllDesksByUserId = `-- name: GetAllDesksByUserId :many
 SELECT id, user_id, image_link, title, description FROM desk WHERE user_id = $1
 `
 
-func (q *Queries) GetAllDesksByUserId(ctx context.Context, userID int32) ([]Desk, error) {
+func (q *Queries) GetAllDesksByUserId(ctx context.Context, userID uuid.UUID) ([]Desk, error) {
 	rows, err := q.db.QueryContext(ctx, getAllDesksByUserId, userID)
 	if err != nil {
 		return nil, err
@@ -149,14 +151,14 @@ SELECT id, language_1, language_2, description, desk_id FROM card WHERE id = $1
 `
 
 type GetCardByIdRow struct {
-	ID          int32
+	ID          uuid.UUID
 	Language1   string
 	Language2   string
 	Description string
-	DeskID      int32
+	DeskID      uuid.UUID
 }
 
-func (q *Queries) GetCardById(ctx context.Context, id int32) (GetCardByIdRow, error) {
+func (q *Queries) GetCardById(ctx context.Context, id uuid.UUID) (GetCardByIdRow, error) {
 	row := q.db.QueryRowContext(ctx, getCardById, id)
 	var i GetCardByIdRow
 	err := row.Scan(
@@ -174,14 +176,14 @@ SELECT id, language_1, language_2, description, desk_id FROM card WHERE desk_id 
 `
 
 type GetCardsByDeskIdRow struct {
-	ID          int32
+	ID          uuid.UUID
 	Language1   string
 	Language2   string
 	Description string
-	DeskID      int32
+	DeskID      uuid.UUID
 }
 
-func (q *Queries) GetCardsByDeskId(ctx context.Context, deskID int32) ([]GetCardsByDeskIdRow, error) {
+func (q *Queries) GetCardsByDeskId(ctx context.Context, deskID uuid.UUID) ([]GetCardsByDeskIdRow, error) {
 	rows, err := q.db.QueryContext(ctx, getCardsByDeskId, deskID)
 	if err != nil {
 		return nil, err
@@ -230,7 +232,7 @@ WHERE email = $1
 `
 
 type GetUserByEmailRow struct {
-	ID         int32
+	ID         uuid.UUID
 	Name       string
 	Surname    string
 	Username   string
@@ -262,7 +264,7 @@ type GetVerificationCodeByIdRow struct {
 	ExpiresAt sql.NullTime
 }
 
-func (q *Queries) GetVerificationCodeById(ctx context.Context, userID sql.NullInt32) (GetVerificationCodeByIdRow, error) {
+func (q *Queries) GetVerificationCodeById(ctx context.Context, userID uuid.NullUUID) (GetVerificationCodeByIdRow, error) {
 	row := q.db.QueryRowContext(ctx, getVerificationCodeById, userID)
 	var i GetVerificationCodeByIdRow
 	err := row.Scan(&i.Code, &i.ExpiresAt)
@@ -278,7 +280,7 @@ type IsUserVerifiedRow struct {
 	Email      string
 }
 
-func (q *Queries) IsUserVerified(ctx context.Context, id int32) (IsUserVerifiedRow, error) {
+func (q *Queries) IsUserVerified(ctx context.Context, id uuid.UUID) (IsUserVerifiedRow, error) {
 	row := q.db.QueryRowContext(ctx, isUserVerified, id)
 	var i IsUserVerifiedRow
 	err := row.Scan(&i.IsVerified, &i.Email)
@@ -293,8 +295,8 @@ type UpdateCardParams struct {
 	Language1   string
 	Language2   string
 	Description string
-	ID          int32
-	DeskID      int32
+	ID          uuid.UUID
+	DeskID      uuid.UUID
 }
 
 func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) error {
@@ -320,8 +322,8 @@ type UpdateDeskParams struct {
 	Title       string
 	Description string
 	ImageLink   sql.NullString
-	ID          int32
-	UserID      int32
+	ID          uuid.UUID
+	UserID      uuid.UUID
 }
 
 func (q *Queries) UpdateDesk(ctx context.Context, arg UpdateDeskParams) error {
@@ -349,7 +351,7 @@ type UpdateUserParams struct {
 	Surname  string
 	Username string
 	Email    string
-	ID       int32
+	ID       uuid.UUID
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
@@ -369,7 +371,7 @@ UPDATE users SET password = $1 WHERE id = $2
 
 type UpdateUserPasswordParams struct {
 	Password string
-	ID       int32
+	ID       uuid.UUID
 }
 
 func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
@@ -384,13 +386,13 @@ RETURNING id
 `
 
 type VerificationCodeCreateParams struct {
-	UserID sql.NullInt32
+	UserID uuid.NullUUID
 	Code   string
 }
 
-func (q *Queries) VerificationCodeCreate(ctx context.Context, arg VerificationCodeCreateParams) (int32, error) {
+func (q *Queries) VerificationCodeCreate(ctx context.Context, arg VerificationCodeCreateParams) (uuid.UUID, error) {
 	row := q.db.QueryRowContext(ctx, verificationCodeCreate, arg.UserID, arg.Code)
-	var id int32
+	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
 }
@@ -411,7 +413,7 @@ WHERE users.id = $1
 `
 
 type VerifyUserParams struct {
-	ID    int32
+	ID    uuid.UUID
 	Email string
 	Code  string
 }

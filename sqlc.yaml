@@ -7,3 +7,6 @@ sql:
       go:
         out: "internal/db" # Oluşturulan Go kodlarının çıkış dizini
         package: "db" # Paket adı
+        overrides:
+          - db_type: "uuid"
+            go_type: "github.com/google/uuid.UUID"

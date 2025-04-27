@@ -7,43 +7,45 @@ package db
 import (
 	"database/sql"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Card struct {
-	ID              int32
+	ID              uuid.UUID
 	Language1       string
 	Language2       string
 	Description     string
-	DeskID          int32
+	DeskID          uuid.UUID
 	ImportanceValue int32
 }
 
 type Desk struct {
-	ID          int32
-	UserID      int32
+	ID          uuid.UUID
+	UserID      uuid.UUID
 	ImageLink   sql.NullString
 	Title       string
 	Description string
 }
 
 type Progress struct {
-	ID            int32
-	UserID        int32
-	CardID        int32
+	ID            uuid.UUID
+	UserID        uuid.UUID
+	CardID        uuid.UUID
 	ProgressLevel int32
 	Date          time.Time
 }
 
 type Todo struct {
-	ID          int32
-	UserID      int32
+	ID          uuid.UUID
+	UserID      uuid.UUID
 	Todo        string
 	IsTrue      sql.NullBool
 	Description string
 }
 
 type User struct {
-	ID         int32
+	ID         uuid.UUID
 	Name       string
 	Surname    string
 	Username   string
@@ -53,15 +55,15 @@ type User struct {
 }
 
 type UserDeskCardCount struct {
-	UserID    int32
+	UserID    uuid.UUID
 	UserName  string
 	DeskCount int64
 	CardCount int64
 }
 
 type VerificationCode struct {
-	ID        int32
-	UserID    sql.NullInt32
+	ID        uuid.UUID
+	UserID    uuid.NullUUID
 	Code      string
 	CreatedAt sql.NullTime
 	ExpiresAt sql.NullTime
