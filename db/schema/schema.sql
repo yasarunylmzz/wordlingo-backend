@@ -24,7 +24,7 @@ CREATE TABLE card (
     language_1 TEXT NOT NULL,
     language_2 TEXT NOT NULL,
     description TEXT NOT NULL,
-    desk_id INTEGER NOT NULL,
+    desk_id UUID NOT NULL,
     importance_value INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (desk_id) REFERENCES desk(id) ON DELETE CASCADE
 ); 
