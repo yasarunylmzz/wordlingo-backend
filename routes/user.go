@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/labstack/echo/v4"
+	auth_controller "github.com/yasarunylmzz/wordlingo-backend/controllers/auth"
 	card_controller "github.com/yasarunylmzz/wordlingo-backend/controllers/card"
 	desk_controller "github.com/yasarunylmzz/wordlingo-backend/controllers/desk"
 	user_controller "github.com/yasarunylmzz/wordlingo-backend/controllers/user"
@@ -50,4 +51,8 @@ func UpdateCard(e *echo.Echo){
 
 func GetAllCardByDeskId(e *echo.Echo){
 	e.POST("/get-card", card_controller.GetAllCardByDeskId, jwt_middleware.RefreshAccessTokenMiddleware)
+}
+
+func VerifyRefreshTokenInSplashScreen(e *echo.Echo){
+	e.POST("/verify-refresh", auth_controller.VerifyRefresh)
 }

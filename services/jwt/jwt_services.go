@@ -79,14 +79,33 @@ func VerifyAccessToken(tokenString string) (*jwt.Token, error) {
     return token, nil
 
 }
-
-// Verify Refresh Token
-func VerifyRefreshToken(tokenString string) (*jwt.Token, error) {
-    return jwt.ParseWithClaims(tokenString,jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
+// VerifyRefreshToken kontrol fonksiyonu
+func VerifyRefreshToken(tokenString string) (bool, error) {
+    token, err := jwt.ParseWithClaims(tokenString, jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
+        // Signature algoritması doğru mu?
         if token.Method != jwt.SigningMethodHS256 {
             return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
         }
         return secretKey, nil
     })
 
+    if err != nil || !token.Valid {
+        return false, fmt.Errorf("token geçersiz: %v", err)
+    }
+
+    claims, ok := token.Claims.(jwt.MapClaims)
+    if !ok {
+        return false, fmt.Errorf("claims parse edilemedi")
+    }
+
+    // Expiration claimini kontrol edelim
+    if exp, ok := claims["exp"].(float64); ok {
+        if int64(exp) < time.Now().Unix() {
+            return false, fmt.Errorf("token süresi dolmuş")
+        }
+    } else {
+        return false, fmt.Errorf("exp claimi bulunamadı")
+    }
+
+    return true, nil // her şey yolunda, süresi dolmamış
 }
