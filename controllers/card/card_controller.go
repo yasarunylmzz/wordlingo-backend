@@ -13,35 +13,36 @@ import (
 
 func CreateCard(c echo.Context) error {
 	ctx := context.Background()
-    var params db.CreateCardParams
-	queries,dbConn, err := helpers.OpenDatabaseConnection()
 
-
-	if err := c.Bind(&params); err != nil {
-		log.Printf("İnvalid inputs", err)
-        return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
-	}
-
+	queries, dbConn, err := helpers.OpenDatabaseConnection()
 	if err != nil {
-        log.Printf("Failed to open database connection: %v", err)
-        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database connection failed"})
-    }	
-
-	err = queries.CreateCard(ctx, params)
-
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"error": err.Error(),
-		})
+		log.Printf("Failed to open database connection: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database connection failed"})
 	}
-
 	defer dbConn.Close()
+
+	var cards []db.CreateCardParams
+
+	if err := c.Bind(&cards); err != nil {
+		log.Printf("Invalid inputs: %v", err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+	}
+
+	for _, card := range cards {
+		err = queries.CreateCard(ctx, card)
+		if err != nil {
+			log.Printf("Error creating card: %v", err)
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"error": err.Error(),
+			})
+		}
+	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "ok",
 	})
-
 }
+
 
 func UpdateCard(c echo.Context) error {
 
