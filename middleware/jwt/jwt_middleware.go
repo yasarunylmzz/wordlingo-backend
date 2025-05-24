@@ -46,7 +46,7 @@ func RefreshAccessTokenMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 				return c.JSON(http.StatusNotAcceptable, map[string]string{"message":err.Error()})
 			}
 			c.Response().Header().Set("New-Access-Token", newAccessToken)
-			return c.JSON(http.StatusBadRequest, map[string]string{"message":"please take new access token in headers"})
+			return c.JSON(http.StatusUnauthorized, map[string]string{"message":"please take new access token in headers"})
 		}
 
 		return next(c)
