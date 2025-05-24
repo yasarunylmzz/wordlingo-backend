@@ -13,13 +13,12 @@ import (
 )
 
 const createCard = `-- name: CreateCard :exec
-INSERT INTO card (language_1, language_2, description,importance_value, desk_id) VALUES ($1, $2, $3, $4, $5)
+INSERT INTO card (language_1, language_2,importance_value, desk_id) VALUES ($1, $2, $3, $4)
 `
 
 type CreateCardParams struct {
 	Language1       string
 	Language2       string
-	Description     string
 	ImportanceValue int32
 	DeskID          uuid.UUID
 }
@@ -29,7 +28,6 @@ func (q *Queries) CreateCard(ctx context.Context, arg CreateCardParams) error {
 	_, err := q.db.ExecContext(ctx, createCard,
 		arg.Language1,
 		arg.Language2,
-		arg.Description,
 		arg.ImportanceValue,
 		arg.DeskID,
 	)
@@ -147,15 +145,14 @@ func (q *Queries) GetAllDesksByUserId(ctx context.Context, userID uuid.UUID) ([]
 }
 
 const getCardById = `-- name: GetCardById :one
-SELECT id, language_1, language_2, description, desk_id FROM card WHERE id = $1
+SELECT id, language_1, language_2 , desk_id FROM card WHERE id = $1
 `
 
 type GetCardByIdRow struct {
-	ID          uuid.UUID
-	Language1   string
-	Language2   string
-	Description string
-	DeskID      uuid.UUID
+	ID        uuid.UUID
+	Language1 string
+	Language2 string
+	DeskID    uuid.UUID
 }
 
 func (q *Queries) GetCardById(ctx context.Context, id uuid.UUID) (GetCardByIdRow, error) {
@@ -165,22 +162,20 @@ func (q *Queries) GetCardById(ctx context.Context, id uuid.UUID) (GetCardByIdRow
 		&i.ID,
 		&i.Language1,
 		&i.Language2,
-		&i.Description,
 		&i.DeskID,
 	)
 	return i, err
 }
 
 const getCardsByDeskId = `-- name: GetCardsByDeskId :many
-SELECT id, language_1, language_2, description, desk_id FROM card WHERE desk_id = $1
+SELECT id, language_1, language_2 , desk_id FROM card WHERE desk_id = $1
 `
 
 type GetCardsByDeskIdRow struct {
-	ID          uuid.UUID
-	Language1   string
-	Language2   string
-	Description string
-	DeskID      uuid.UUID
+	ID        uuid.UUID
+	Language1 string
+	Language2 string
+	DeskID    uuid.UUID
 }
 
 func (q *Queries) GetCardsByDeskId(ctx context.Context, deskID uuid.UUID) ([]GetCardsByDeskIdRow, error) {
@@ -196,7 +191,6 @@ func (q *Queries) GetCardsByDeskId(ctx context.Context, deskID uuid.UUID) ([]Get
 			&i.ID,
 			&i.Language1,
 			&i.Language2,
-			&i.Description,
 			&i.DeskID,
 		); err != nil {
 			return nil, err
@@ -288,22 +282,20 @@ func (q *Queries) IsUserVerified(ctx context.Context, id uuid.UUID) (IsUserVerif
 }
 
 const updateCard = `-- name: UpdateCard :exec
-UPDATE card SET language_1 = $1, language_2 = $2, description = $3 WHERE id = $4 AND desk_id = $5
+UPDATE card SET language_1 = $1, language_2 = $2 WHERE id = $3 AND desk_id = $4
 `
 
 type UpdateCardParams struct {
-	Language1   string
-	Language2   string
-	Description string
-	ID          uuid.UUID
-	DeskID      uuid.UUID
+	Language1 string
+	Language2 string
+	ID        uuid.UUID
+	DeskID    uuid.UUID
 }
 
 func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) error {
 	_, err := q.db.ExecContext(ctx, updateCard,
 		arg.Language1,
 		arg.Language2,
-		arg.Description,
 		arg.ID,
 		arg.DeskID,
 	)

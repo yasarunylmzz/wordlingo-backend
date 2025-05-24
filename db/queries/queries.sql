@@ -39,19 +39,19 @@ SELECT * FROM desk WHERE user_id = $1;
 
 -- Card-related queries
 -- name: CreateCard :exec
-INSERT INTO card (language_1, language_2, description,importance_value, desk_id) VALUES ($1, $2, $3, $4, $5);
+INSERT INTO card (language_1, language_2,importance_value, desk_id) VALUES ($1, $2, $3, $4);
 
 -- name: UpdateCard :exec
-UPDATE card SET language_1 = $1, language_2 = $2, description = $3 WHERE id = $4 AND desk_id = $5;
+UPDATE card SET language_1 = $1, language_2 = $2 WHERE id = $3 AND desk_id = $4;
 
 -- name: DeleteCard :exec
 DELETE FROM card WHERE id = $1 AND desk_id = $2;
 
 -- name: GetCardById :one
-SELECT id, language_1, language_2, description, desk_id FROM card WHERE id = $1;
+SELECT id, language_1, language_2 , desk_id FROM card WHERE id = $1;
 
 -- name: GetCardsByDeskId :many
-SELECT id, language_1, language_2, description, desk_id FROM card WHERE desk_id = $1;
+SELECT id, language_1, language_2 , desk_id FROM card WHERE desk_id = $1;
 
 -- name: VerificationCodeCreate :one
 INSERT INTO verification_codes (user_id, code, created_at, expires_at)

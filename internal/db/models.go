@@ -15,7 +15,6 @@ type Card struct {
 	ID              uuid.UUID
 	Language1       string
 	Language2       string
-	Description     string
 	DeskID          uuid.UUID
 	ImportanceValue int32
 }
