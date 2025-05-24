@@ -195,7 +195,6 @@ func UserVerification(c echo.Context) error {
 		})
 	}
 
-
 	 if err := queries.VerifyUser(ctx, params); err != nil {
 	 	return c.JSON(http.StatusInternalServerError, map[string]string{
 	 		"error": "User verification failed",

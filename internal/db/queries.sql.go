@@ -13,7 +13,7 @@ import (
 )
 
 const createCard = `-- name: CreateCard :exec
-INSERT INTO card (language_1, language_2,importance_value, desk_id) VALUES ($1, $2, $3, $4)
+INSERT INTO card (language_1, language_2, importance_value, desk_id) VALUES ($1, $2, $3, $4)
 `
 
 type CreateCardParams struct {
@@ -168,14 +168,15 @@ func (q *Queries) GetCardById(ctx context.Context, id uuid.UUID) (GetCardByIdRow
 }
 
 const getCardsByDeskId = `-- name: GetCardsByDeskId :many
-SELECT id, language_1, language_2 , desk_id FROM card WHERE desk_id = $1
+SELECT id, language_1, language_2, importance_value, desk_id FROM card WHERE desk_id = $1
 `
 
 type GetCardsByDeskIdRow struct {
-	ID        uuid.UUID
-	Language1 string
-	Language2 string
-	DeskID    uuid.UUID
+	ID              uuid.UUID
+	Language1       string
+	Language2       string
+	ImportanceValue int32
+	DeskID          uuid.UUID
 }
 
 func (q *Queries) GetCardsByDeskId(ctx context.Context, deskID uuid.UUID) ([]GetCardsByDeskIdRow, error) {
@@ -191,6 +192,7 @@ func (q *Queries) GetCardsByDeskId(ctx context.Context, deskID uuid.UUID) ([]Get
 			&i.ID,
 			&i.Language1,
 			&i.Language2,
+			&i.ImportanceValue,
 			&i.DeskID,
 		); err != nil {
 			return nil, err
