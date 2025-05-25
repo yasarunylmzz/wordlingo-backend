@@ -3,7 +3,6 @@ package desk_controller
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -18,37 +17,38 @@ type DeskRequest struct {
 
 
 func CreateDesk(c echo.Context) error {
-
 	ctx := context.Background()
 	var params db.CreateDeskParams
+
 	queries, dbConn, err := helpers.OpenDatabaseConnection()
-
-	fmt.Print(params.Description)
-
-	if err := c.Bind(&params); err != nil {
-        return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
-    }
-
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message":"internal server error"})
+		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal server error"})
 	}
-	
-	err = queries.CreateDesk(ctx, params)
-
-	fmt.Print(err)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message":"error while creating desk"})
-	}
-
 	defer dbConn.Close()
 
-	return c.JSON(http.StatusAccepted, map[string]string{"message":"ok","title":params.Title,"description":params.Description,"image_url":  func() string {
-        if params.ImageLink.Valid {
-            return params.ImageLink.String
-        }
-        return ""  // veya default bir değer
-    }(),})
+	if err := c.Bind(&params); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+	}
+
+	deskID, err := queries.CreateDesk(ctx, params)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "error while creating desk"})
+	}
+
+	return c.JSON(http.StatusAccepted, map[string]interface{}{
+		"message":     "ok",
+		"title":       params.Title,
+		"description": params.Description,
+		"desk_id":     deskID.String(),
+		"image_url": func() string {
+			if params.ImageLink.Valid {
+				return params.ImageLink.String
+			}
+			return ""
+		}(),
+	})
 }
+
 
 func UpdateDesk(c echo.Context) error {
 	ctx := context.Background()

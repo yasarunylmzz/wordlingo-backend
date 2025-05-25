@@ -21,8 +21,10 @@ WHERE id = $5;
 UPDATE users SET password = $1 WHERE id = $2;
 
 -- Desk-related queries
--- name: CreateDesk :exec
-INSERT INTO desk (title, description, image_link, user_id) VALUES ($1, $2, $3, $4);
+-- name: CreateDesk :one
+INSERT INTO desk (title, description, image_link, user_id)
+VALUES ($1, $2, $3, $4)
+RETURNING id;
 
 -- name: UpdateDesk :exec
 UPDATE desk 

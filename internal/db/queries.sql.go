@@ -34,8 +34,10 @@ func (q *Queries) CreateCard(ctx context.Context, arg CreateCardParams) error {
 	return err
 }
 
-const createDesk = `-- name: CreateDesk :exec
-INSERT INTO desk (title, description, image_link, user_id) VALUES ($1, $2, $3, $4)
+const createDesk = `-- name: CreateDesk :one
+INSERT INTO desk (title, description, image_link, user_id)
+VALUES ($1, $2, $3, $4)
+RETURNING id
 `
 
 type CreateDeskParams struct {
@@ -46,14 +48,16 @@ type CreateDeskParams struct {
 }
 
 // Desk-related queries
-func (q *Queries) CreateDesk(ctx context.Context, arg CreateDeskParams) error {
-	_, err := q.db.ExecContext(ctx, createDesk,
+func (q *Queries) CreateDesk(ctx context.Context, arg CreateDeskParams) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, createDesk,
 		arg.Title,
 		arg.Description,
 		arg.ImageLink,
 		arg.UserID,
 	)
-	return err
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
 }
 
 const createUser = `-- name: CreateUser :one
